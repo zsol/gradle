@@ -40,6 +40,7 @@ import org.gradle.util.WrapUtil;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.apache.ivy.core.module.descriptor.Configuration.Visibility;
 
@@ -72,6 +73,7 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     private boolean includedInResult;
     private ResolverResults cachedResolverResults;
     private final ResolutionStrategyInternal resolutionStrategy;
+    private static final Map<String, ResolverResults> allResults = new ConcurrentHashMap<String, ResolverResults>();
 
     public DefaultConfiguration(String path, String name, ConfigurationsProvider configurationsProvider,
                                 ConfigurationResolver resolver, ListenerManager listenerManager,
@@ -245,21 +247,40 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     private void resolveNow() {
         synchronized (lock) {
             if (state == State.UNRESOLVED) {
+                cachedResolverResults = allResults.get(this.getPath());
+                if (cachedResolverResults != null) {
+                    state = State.RESOLVED;
+                    return;
+                }
                 DependencyResolutionListener broadcast = getDependencyResolutionBroadcast();
                 ResolvableDependencies incoming = getIncoming();
                 broadcast.beforeResolve(incoming);
-                cachedResolverResults = resolver.resolve(this);
-                for (Configuration configuration : extendsFrom) {
-                    ((ConfigurationInternal) configuration).includedInResolveResult();
-                }
-                if (cachedResolverResults.getResolvedConfiguration().hasError()) {
-                    state = State.RESOLVED_WITH_FAILURES;
-                } else {
-                    state = State.RESOLVED;
-                }
+                doResolve();
                 broadcast.afterResolve(incoming);
+                if (state == State.RESOLVED) {
+                    allResults.put(this.getPath(), cachedResolverResults);
+                }
             }
         }
+    }
+
+    private void doResolve() {
+        cachedResolverResults = allResults.get(this.getPath());
+        if (cachedResolverResults != null) {
+            state = State.RESOLVED;
+            return;
+        }
+
+        cachedResolverResults = resolver.resolve(this);
+        for (Configuration configuration : extendsFrom) {
+            ((ConfigurationInternal) configuration).includedInResolveResult();
+        }
+        if (cachedResolverResults.getResolvedConfiguration().hasError()) {
+            state = State.RESOLVED_WITH_FAILURES;
+        } else {
+            state = State.RESOLVED;
+        }
+        allResults.put(this.getPath(), cachedResolverResults);
     }
 
     public TaskDependency getBuildDependencies() {

@@ -16,13 +16,12 @@
 package org.gradle.api.internal.artifacts.ivyservice;
 
 import org.gradle.api.artifacts.*;
-import org.gradle.internal.resolve.ArtifactResolveException;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.oldresult.ResolvedConfigurationResults;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.specs.Specs;
-import org.gradle.internal.Factory;
 import org.gradle.internal.graph.CachingDirectedGraphWalker;
 import org.gradle.internal.graph.DirectedGraphWithEdgeValues;
+import org.gradle.internal.resolve.ArtifactResolveException;
 import org.gradle.util.CollectionUtils;
 
 import java.io.File;
@@ -88,8 +87,8 @@ public class DefaultLenientConfiguration implements LenientConfiguration {
      */
     public Set<ResolvedArtifact> getArtifacts(Spec<? super Dependency> dependencySpec) {
         final Set<ResolvedArtifact> allArtifacts = getAllArtifacts(dependencySpec);
-        return cacheLockingManager.useCache("retrieve artifacts from " + configuration, new Factory<Set<ResolvedArtifact>>() {
-            public Set<ResolvedArtifact> create() {
+//        return cacheLockingManager.useCache("retrieve artifacts from " + configuration, new Factory<Set<ResolvedArtifact>>() {
+//            public Set<ResolvedArtifact> create() {
                 return CollectionUtils.filter(allArtifacts, new Spec<ResolvedArtifact>() {
                     public boolean isSatisfiedBy(ResolvedArtifact element) {
                         try {
@@ -100,22 +99,22 @@ public class DefaultLenientConfiguration implements LenientConfiguration {
                         }
                     }
                 });
-            }
-        });
+//            }
+//        });
     }
 
     private Set<File> getFiles(final Set<ResolvedArtifact> artifacts) {
         final Set<File> files = new LinkedHashSet<File>();
-        cacheLockingManager.useCache("resolve files from " + configuration, new Runnable() {
-            public void run() {
+//        cacheLockingManager.useCache("resolve files from " + configuration, new Runnable() {
+//            public void run() {
                 for (ResolvedArtifact artifact : artifacts) {
                     File depFile = artifact.getFile();
                     if (depFile != null) {
                         files.add(depFile);
                     }
                 }
-            }
-        });
+//            }
+//        });
         return files;
     }
 
