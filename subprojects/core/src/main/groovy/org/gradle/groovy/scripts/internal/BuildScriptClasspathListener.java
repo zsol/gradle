@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package org.gradle.api.internal.initialization.loadercache;
+package org.gradle.groovy.scripts.internal;
+
+import java.io.File;
 
 /**
- * Opaque identifier of the classloader. Needed for correct behavior of classloader invalidation.
+ * Listens to build script classspath change notifications
  */
-public interface ClassLoaderId {
-    boolean equals(Object o);
-    int hashCode();
+public interface BuildScriptClasspathListener {
 
     /**
-     * When this method it called it means that this classloader will be refreshed,
-     * e.g. the cached instance is dropped and new classloader instance is used.
-     * TODO SF, this does not belong here or the enclosing class should not be 'id'
+     * Invoked when given classpath of given build script has changed in between build runs
      */
-    void notifyRefreshed();
+    void buildScriptClasspathChanged(File buildScript);
 }

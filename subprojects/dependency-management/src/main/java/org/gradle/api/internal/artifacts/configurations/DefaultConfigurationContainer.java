@@ -39,25 +39,27 @@ public class DefaultConfigurationContainer extends AbstractNamedDomainObjectCont
     private final DomainObjectContext context;
     private final ListenerManager listenerManager;
     private final DependencyMetaDataProvider dependencyMetaDataProvider;
+    private ProjectDataCache projectDataCache;
 
     private int detachedConfigurationDefaultNameCounter = 1;
 
     public DefaultConfigurationContainer(ConfigurationResolver resolver,
                                          Instantiator instantiator, DomainObjectContext context, ListenerManager listenerManager,
-                                         DependencyMetaDataProvider dependencyMetaDataProvider) {
+                                         DependencyMetaDataProvider dependencyMetaDataProvider, ProjectDataCache projectDataCache) {
         super(Configuration.class, instantiator, new Configuration.Namer());
         this.resolver = resolver;
         this.instantiator = instantiator;
         this.context = context;
         this.listenerManager = listenerManager;
         this.dependencyMetaDataProvider = dependencyMetaDataProvider;
+        this.projectDataCache = projectDataCache;
     }
 
     @Override
     protected Configuration doCreate(String name) {
         return instantiator.newInstance(DefaultConfiguration.class, context.absoluteProjectPath(name),
                 name, this, resolver, listenerManager,
-                dependencyMetaDataProvider, instantiator.newInstance(DefaultResolutionStrategy.class));
+                dependencyMetaDataProvider, instantiator.newInstance(DefaultResolutionStrategy.class), projectDataCache);
     }
 
     public Set<Configuration> getAll() {
@@ -84,7 +86,7 @@ public class DefaultConfigurationContainer extends AbstractNamedDomainObjectCont
         DetachedConfigurationsProvider detachedConfigurationsProvider = new DetachedConfigurationsProvider();
         DefaultConfiguration detachedConfiguration = new DefaultConfiguration(
                 name, name, detachedConfigurationsProvider, resolver,
-                listenerManager, dependencyMetaDataProvider, new DefaultResolutionStrategy());
+                listenerManager, dependencyMetaDataProvider, new DefaultResolutionStrategy(), projectDataCache);
         DomainObjectSet<Dependency> detachedDependencies = detachedConfiguration.getDependencies();
         for (Dependency dependency : dependencies) {
             detachedDependencies.add(dependency.copy());

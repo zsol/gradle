@@ -28,8 +28,8 @@ class DefaultClassLoaderCacheTest extends Specification {
 
     def storage = [:]
     def cache = new DefaultClassLoaderCache(storage)
-    def id1 = new ClassLoaderId() {}
-    def id2 = new ClassLoaderId() {}
+    def id1 = Mock(ClassLoaderId)
+    def id2 = Mock(ClassLoaderId)
 
     @Rule TestNameTestDirectoryProvider testDirectoryProvider = new TestNameTestDirectoryProvider()
 

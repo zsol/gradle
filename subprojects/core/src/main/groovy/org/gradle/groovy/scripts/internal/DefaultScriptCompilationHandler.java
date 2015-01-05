@@ -31,6 +31,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.gradle.api.GradleException;
 import org.gradle.api.internal.initialization.ClassLoaderIds;
 import org.gradle.api.internal.initialization.loadercache.ClassLoaderCache;
+import org.gradle.api.internal.initialization.loadercache.ClassLoaderId;
 import org.gradle.groovy.scripts.ScriptCompilationException;
 import org.gradle.groovy.scripts.ScriptSource;
 import org.gradle.groovy.scripts.Transformer;
@@ -51,10 +52,12 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
     private static final String EMPTY_SCRIPT_MARKER_FILE_NAME = "emptyScript.txt";
     private final EmptyScriptGenerator emptyScriptGenerator;
     private final ClassLoaderCache classLoaderCache;
+    private BuildScriptClasspathListener classpathListener;
 
-    public DefaultScriptCompilationHandler(EmptyScriptGenerator emptyScriptGenerator, ClassLoaderCache classLoaderCache) {
+    public DefaultScriptCompilationHandler(EmptyScriptGenerator emptyScriptGenerator, ClassLoaderCache classLoaderCache, BuildScriptClasspathListener classpathListener) {
         this.emptyScriptGenerator = emptyScriptGenerator;
         this.classLoaderCache = classLoaderCache;
+        this.classpathListener = classpathListener;
     }
 
     public void compileToDir(ScriptSource source, ClassLoader classLoader, File classesDir,
@@ -146,14 +149,19 @@ public class DefaultScriptCompilationHandler implements ScriptCompilationHandler
         return configuration;
     }
 
-    public <T extends Script> Class<? extends T> loadFromDir(ScriptSource source, ClassLoader classLoader, File scriptCacheDir,
+    public <T extends Script> Class<? extends T> loadFromDir(final ScriptSource source, ClassLoader classLoader, File scriptCacheDir,
                                                              Class<T> scriptBaseClass) {
         if (new File(scriptCacheDir, EMPTY_SCRIPT_MARKER_FILE_NAME).isFile()) {
             return emptyScriptGenerator.generate(scriptBaseClass);
         }
 
         try {
-            ClassLoader loader = this.classLoaderCache.get(ClassLoaderIds.buildScript(source.getFileName()), new DefaultClassPath(scriptCacheDir), classLoader, null);
+            ClassLoaderId id = ClassLoaderIds.buildScript(source.getFileName(), new Runnable() {
+                public void run() {
+                    classpathListener.buildScriptClasspathChanged(source.getResource().getFile());
+                }
+            });
+            ClassLoader loader = this.classLoaderCache.get(id, new DefaultClassPath(scriptCacheDir), classLoader, null);
             return loader.loadClass(source.getClassName()).asSubclass(scriptBaseClass);
         } catch (Exception e) {
             File expectedClassFile = new File(scriptCacheDir, source.getClassName() + ".class");

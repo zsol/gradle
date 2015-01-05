@@ -24,6 +24,7 @@ import org.gradle.api.internal.artifacts.DefaultModule;
 import org.gradle.api.internal.artifacts.DependencyManagementServices;
 import org.gradle.api.internal.artifacts.ModuleInternal;
 import org.gradle.api.internal.artifacts.configurations.DependencyMetaDataProvider;
+import org.gradle.api.internal.artifacts.configurations.ProjectDataCache;
 import org.gradle.api.internal.classpath.ModuleRegistry;
 import org.gradle.api.internal.classpath.PluginModuleRegistry;
 import org.gradle.api.internal.component.ComponentTypeRegistry;
@@ -199,7 +200,7 @@ public class BuildScopeServices extends DefaultServiceRegistry {
 
     protected FileCacheBackedScriptClassCompiler createFileCacheBackedScriptClassCompiler(
             CacheRepository cacheRepository, EmptyScriptGenerator emptyScriptGenerator, final StartParameter startParameter,
-            ProgressLoggerFactory progressLoggerFactory, ClassLoaderCache classLoaderCache) {
+            ProgressLoggerFactory progressLoggerFactory, ClassLoaderCache classLoaderCache, ProjectDataCache projectDataCache) {
         CacheValidator scriptCacheInvalidator = new CacheValidator() {
             public boolean isValid() {
                 return !startParameter.isRecompileScripts();
@@ -208,7 +209,7 @@ public class BuildScopeServices extends DefaultServiceRegistry {
         return new FileCacheBackedScriptClassCompiler(
                 cacheRepository,
                 scriptCacheInvalidator,
-                new DefaultScriptCompilationHandler(emptyScriptGenerator, classLoaderCache),
+                new DefaultScriptCompilationHandler(emptyScriptGenerator, classLoaderCache, projectDataCache),
                 progressLoggerFactory
         );
     }

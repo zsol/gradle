@@ -18,6 +18,8 @@ package org.gradle.internal.service.scopes;
 
 import org.gradle.StartParameter;
 import org.gradle.api.internal.*;
+import org.gradle.api.internal.artifacts.configurations.DefaultProjectDataCache;
+import org.gradle.api.internal.artifacts.configurations.ProjectDataCache;
 import org.gradle.api.internal.changedetection.state.InMemoryTaskArtifactCache;
 import org.gradle.api.internal.classpath.DefaultModuleRegistry;
 import org.gradle.api.internal.classpath.DefaultPluginModuleRegistry;
@@ -178,6 +180,10 @@ public class GlobalScopeServices {
 
     ClassLoaderCacheFactory createClassLoaderCacheFactory() {
         return new ClassLoaderCacheFactory();
+    }
+
+    ProjectDataCache createProjectDataCache() {
+        return new DefaultProjectDataCache();
     }
 
     protected ModelSchemaStore createModelSchemaStore() {

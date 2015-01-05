@@ -16,6 +16,7 @@
 
 package org.gradle.api.internal.initialization;
 
+import com.google.common.util.concurrent.Runnables;
 import org.gradle.api.internal.initialization.loadercache.ClassLoaderId;
 
 /**
@@ -27,27 +28,30 @@ public class ClassLoaderIds {
      * class loader that is a part of class loader scope (hierarchy)
      */
     static ClassLoaderId scopeNode(String node) {
-        return new DefaultClassLoaderId("scope:" + node);
+        return new DefaultClassLoaderId("scope:" + node, Runnables.doNothing());
     }
 
     /**
      * build script classloader
      */
-    public static ClassLoaderId buildScript(String fileName) {
-        return new DefaultClassLoaderId("build script:" + fileName);
+    public static ClassLoaderId buildScript(String fileName, Runnable whenRefreshed) {
+        return new DefaultClassLoaderId("build script:" + fileName, whenRefreshed);
     }
 
     /**
      * test task classpath classloader
      */
     public static ClassLoaderId testTaskClasspath(String testTaskPath) {
-        return new DefaultClassLoaderId("test classpath:" + testTaskPath);
+        return new DefaultClassLoaderId("test classpath:" + testTaskPath, Runnables.doNothing());
     }
 
     private static class DefaultClassLoaderId implements ClassLoaderId {
         private final String node;
-        public DefaultClassLoaderId(String node) {
+        private final Runnable whenRefreshed;
+
+        public DefaultClassLoaderId(String node, Runnable whenRefreshed) {
             this.node = node;
+            this.whenRefreshed = whenRefreshed;
         }
         public String toString() {
             return node;
@@ -67,6 +71,10 @@ public class ClassLoaderIds {
         }
         public int hashCode() {
             return node.hashCode();
+        }
+
+        public void notifyRefreshed() {
+            whenRefreshed.run();
         }
     }
 }

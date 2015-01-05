@@ -113,6 +113,7 @@ public class DefaultClassLoaderCache implements ClassLoaderCache {
             //we have already served classloader with this id but the key has changed - invalidate this classloader
             idCache.put(id, key); //refresh the id
             storage.remove(existingKey); //invalidate stale entry
+            id.notifyRefreshed();
         }
     }
 }

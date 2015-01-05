@@ -73,12 +73,13 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     private boolean includedInResult;
     private ResolverResults cachedResolverResults;
     private final ResolutionStrategyInternal resolutionStrategy;
-    private static final Map<String, ResolverResults> allResults = new ConcurrentHashMap<String, ResolverResults>();
+    private ProjectDataCache<ResolverResults> resolverResultsCache;
+//    private static final Map<String, ResolverResults> allResults = new ConcurrentHashMap<String, ResolverResults>();
 
     public DefaultConfiguration(String path, String name, ConfigurationsProvider configurationsProvider,
                                 ConfigurationResolver resolver, ListenerManager listenerManager,
                                 DependencyMetaDataProvider metaDataProvider,
-                                ResolutionStrategyInternal resolutionStrategy) {
+                                ResolutionStrategyInternal resolutionStrategy, ProjectDataCache<ResolverResults> resolverResultsCache) {
         this.path = path;
         this.name = name;
         this.configurationsProvider = configurationsProvider;
@@ -86,6 +87,7 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
         this.listenerManager = listenerManager;
         this.metaDataProvider = metaDataProvider;
         this.resolutionStrategy = resolutionStrategy;
+        this.resolverResultsCache = resolverResultsCache;
 
         resolutionListenerBroadcast = listenerManager.createAnonymousBroadcaster(DependencyResolutionListener.class);
 
@@ -247,7 +249,8 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     private void resolveNow() {
         synchronized (lock) {
             if (state == State.UNRESOLVED) {
-                cachedResolverResults = allResults.get(this.getPath());
+
+                cachedResolverResults = resolverResultsCache.get(path);
                 if (cachedResolverResults != null) {
                     state = State.RESOLVED;
                     return;
@@ -258,19 +261,13 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
                 doResolve();
                 broadcast.afterResolve(incoming);
                 if (state == State.RESOLVED) {
-                    allResults.put(this.getPath(), cachedResolverResults);
+                    resolverResultsCache.put(this.getPath(), cachedResolverResults);
                 }
             }
         }
     }
 
     private void doResolve() {
-        cachedResolverResults = allResults.get(this.getPath());
-        if (cachedResolverResults != null) {
-            state = State.RESOLVED;
-            return;
-        }
-
         cachedResolverResults = resolver.resolve(this);
         for (Configuration configuration : extendsFrom) {
             ((ConfigurationInternal) configuration).includedInResolveResult();
@@ -280,7 +277,6 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
         } else {
             state = State.RESOLVED;
         }
-        allResults.put(this.getPath(), cachedResolverResults);
     }
 
     public TaskDependency getBuildDependencies() {
@@ -360,7 +356,7 @@ public class DefaultConfiguration extends AbstractFileCollection implements Conf
     private DefaultConfiguration createCopy(Set<Dependency> dependencies, boolean recursive) {
         DetachedConfigurationsProvider configurationsProvider = new DetachedConfigurationsProvider();
         DefaultConfiguration copiedConfiguration = new DefaultConfiguration(path + "Copy", name + "Copy",
-                configurationsProvider, resolver, listenerManager, metaDataProvider, resolutionStrategy.copy());
+                configurationsProvider, resolver, listenerManager, metaDataProvider, resolutionStrategy.copy(), resolverResultsCache);
         configurationsProvider.setTheOnlyConfiguration(copiedConfiguration);
         // state, cachedResolvedConfiguration, and extendsFrom intentionally not copied - must re-resolve copy
         // copying extendsFrom could mess up dependencies when copy was re-resolved
