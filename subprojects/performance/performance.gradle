@@ -1,3 +1,5 @@
+import groovy.text.SimpleTemplateEngine
+
 apply from: 'src/generator.groovy'
 apply plugin: 'javascript-base'
 
@@ -335,6 +337,28 @@ task bigOldJavaMoreSource(type: ProjectGeneratorTask) {
     testDependencies = files()
 }
 
+task copyAntennapod(type: Sync) {
+    from "src/templates/antennapod"
+    from "src/templates/init.gradle"
+    into new File(buildDir, "antennapod")
+}
+
+task antennapod(type: DecorateNonTemplatedBuild) {
+    dependsOn copyAntennapod
+    projectName "antennapod"
+}
+
+task copyAndroidMultiproject(type: Sync) {
+    from "src/templates/android-multiproject"
+    from "src/templates/init.gradle"
+    into new File(buildDir, "android-multiproject")
+}
+
+task androidMultiproject(type: DecorateNonTemplatedBuild) {
+    dependsOn copyAndroidMultiproject
+    projectName "android-multiproject"
+}
+
 task all(dependsOn: generators)
 
 task prepareSamples(dependsOn: [bigEmpty, small, multi, lotDependencies, withJUnit, withTestNG, withVerboseTestNG, withVerboseJUnit, manyProjects,
@@ -342,7 +366,7 @@ task prepareSamples(dependsOn: [bigEmpty, small, multi, lotDependencies, withJUn
                                 smallVariantsNewModel, mediumVariantsNewModel, bigVariantsNewModel, smallVariantsOldModel, mediumVariantsOldModel, bigVariantsOldModel,
                                 variantsNewModelMultiproject, variantsOldModelMultiproject, smallNative, mediumNative, bigNative, multiNative,
                                 smallScenarioNative, mediumScenarioNative, bigScenarioNative, manyProjectsNative,
-                                bigOldJavaMoreSource])
+                                bigOldJavaMoreSource, antennapod, androidMultiproject])
 
 task report {
     def reportDir = new File(buildDir, "performance-tests/report")
@@ -382,5 +406,37 @@ task performanceExperiments(type: Test) {
 integTest {
     options {
         excludeCategories 'org.gradle.performance.PerformanceTest'
+    }
+}
+
+class DecorateNonTemplatedBuild extends DefaultTask {
+
+    String projectName
+
+    @InputFile
+    File getOriginalFile() {
+        project.file("src/templates/$projectName/build.gradle")
+    }
+
+    @InputFiles
+    FileCollection getTemplateFiles() {
+        project.files("src/templates/build-event-timestamps/build.gradle", "src/templates/heap-capture/build.gradle")
+    }
+
+    @OutputFile
+    File getOutputFile() {
+        new File(project.buildDir, "$projectName/build.gradle")
+    }
+
+    @TaskAction
+    void decorate() {
+        def engine = new SimpleTemplateEngine()
+        def buildFileContent = originalFile.text
+        templateFiles.each {
+            buildFileContent = engine.createTemplate(it).make(original: buildFileContent).toString()
+        }
+        outputFile.withWriter { Writer writer ->
+            writer.write(buildFileContent)
+        }
     }
 }

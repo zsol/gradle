@@ -39,6 +39,7 @@ public class CrossVersionPerformanceTestRunner extends PerformanceTestSpec {
     List<String> tasksToRun = []
     List<String> args = []
     List<String> gradleOpts = []
+    boolean disableEagerClassLoaderCreationCheck
 
     List<String> targetVersions = []
     Amount<Duration> maxExecutionTimeRegression = Duration.millis(0)
@@ -110,6 +111,7 @@ public class CrossVersionPerformanceTestRunner extends PerformanceTestSpec {
             args(this.args as String[])
             gradleOpts(this.gradleOpts as String[])
             useDaemon(this.useDaemon)
+            eagerClassLoaderCreationCheckDisabled(disableEagerClassLoaderCreationCheck)
         }.build()
 
         experimentRunner.run(spec, results)

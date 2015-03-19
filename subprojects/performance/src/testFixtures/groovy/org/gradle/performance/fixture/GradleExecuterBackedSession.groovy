@@ -73,6 +73,10 @@ class GradleExecuterBackedSession implements GradleSession {
             executer.withArgument('--daemon')
         }
 
+        if (invocation.eagerClassLoaderCreationCheckDisabled) {
+            executer.withEagerClassLoaderCreationCheckDisabled()
+        }
+
         executer
     }
 }

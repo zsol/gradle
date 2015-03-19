@@ -34,8 +34,10 @@ class GradleInvocationSpec {
     final List<String> gradleOpts
     final boolean useDaemon
     final boolean useToolingApi
+    final boolean eagerClassLoaderCreationCheckDisabled
 
-    GradleInvocationSpec(GradleDistribution gradleDistribution, File workingDirectory, List<String> tasksToRun, List<String> args, List<String> gradleOpts, boolean useDaemon, boolean useToolingApi) {
+    GradleInvocationSpec(GradleDistribution gradleDistribution, File workingDirectory, List<String> tasksToRun, List<String> args, List<String> gradleOpts, boolean useDaemon, boolean useToolingApi,
+                         boolean eagerClassLoaderCreationCheckDisabled) {
         this.gradleDistribution = gradleDistribution
         this.workingDirectory = workingDirectory
         this.tasksToRun = tasksToRun
@@ -43,6 +45,7 @@ class GradleInvocationSpec {
         this.gradleOpts = gradleOpts
         this.useDaemon = useDaemon
         this.useToolingApi = useToolingApi
+        this.eagerClassLoaderCreationCheckDisabled = eagerClassLoaderCreationCheckDisabled
     }
 
     static Builder builder() {
@@ -50,11 +53,13 @@ class GradleInvocationSpec {
     }
 
     GradleInvocationSpec withAdditionalGradleOpts(List<String> additionalGradleOpts) {
-        return new GradleInvocationSpec(gradleDistribution, workingDirectory, tasksToRun, args, ImmutableList.builder().addAll(gradleOpts).addAll(additionalGradleOpts).build(), useDaemon, useToolingApi)
+        return new GradleInvocationSpec(gradleDistribution, workingDirectory, tasksToRun, args, ImmutableList.builder().addAll(gradleOpts).addAll(additionalGradleOpts).build(), useDaemon,
+                useToolingApi, eagerClassLoaderCreationCheckDisabled)
     }
 
     GradleInvocationSpec withAdditionalArgs(List<String> additionalArgs) {
-        return new GradleInvocationSpec(gradleDistribution, workingDirectory, tasksToRun, ImmutableList.builder().addAll(args).addAll(additionalArgs).build(), gradleOpts, useDaemon, useToolingApi)
+        return new GradleInvocationSpec(gradleDistribution, workingDirectory, tasksToRun, ImmutableList.builder().addAll(args).addAll(additionalArgs).build(), gradleOpts, useDaemon, useToolingApi,
+                eagerClassLoaderCreationCheckDisabled)
     }
 
     static class Builder {
@@ -65,6 +70,7 @@ class GradleInvocationSpec {
         List<String> gradleOptions = []
         boolean useDaemon
         boolean useToolingApi
+        boolean eagerClassLoaderCreationCheckDisabled
 
         Builder distribution(GradleDistribution gradleDistribution) {
             this.gradleDistribution = gradleDistribution
@@ -125,11 +131,17 @@ class GradleInvocationSpec {
             gradleOpts("-D${GradleProperties.WORKERS_PROPERTY}=1")
         }
 
+        Builder eagerClassLoaderCreationCheckDisabled(boolean disabled) {
+            eagerClassLoaderCreationCheckDisabled = disabled
+            this
+        }
+
         GradleInvocationSpec build() {
             assert gradleDistribution != null
             assert workingDirectory != null
 
-            return new GradleInvocationSpec(gradleDistribution, workingDirectory, tasksToRun.asImmutable(), args.asImmutable(), gradleOptions.asImmutable(), useDaemon, useToolingApi)
+            return new GradleInvocationSpec(gradleDistribution, workingDirectory, tasksToRun.asImmutable(), args.asImmutable(), gradleOptions.asImmutable(), useDaemon, useToolingApi,
+                    eagerClassLoaderCreationCheckDisabled)
         }
 
     }
