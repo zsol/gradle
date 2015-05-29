@@ -43,7 +43,7 @@ public class ModelMapModelProjection<I> implements ModelProjection {
     private final static Set<Class<?>> SUPPORTED_CONTAINER_TYPES = ImmutableSet.<Class<?>>of(ModelMap.class, CollectionBuilder.class);
 
     public static <T> ModelProjection of(ModelType<T> itemType, ChildNodeCreatorStrategy<? super T> creatorStrategy) {
-        return new ModelMapModelProjection<T>(itemType, creatorStrategy);
+        return new ModelMapModelProjection<T>(itemType, false, creatorStrategy);
     }
 
     public static <T> ModelProjection of(Class<T> itemType, ChildNodeCreatorStrategy<? super T> creatorStrategy) {
@@ -52,10 +52,12 @@ public class ModelMapModelProjection<I> implements ModelProjection {
 
     protected final Class<I> baseItemType;
     protected final ModelType<I> baseItemModelType;
+    private final boolean eager;
     private final ChildNodeCreatorStrategy<? super I> creatorStrategy;
 
-    public ModelMapModelProjection(ModelType<I> baseItemModelType, ChildNodeCreatorStrategy<? super I> creatorStrategy) {
+    protected ModelMapModelProjection(ModelType<I> baseItemModelType, boolean eager, ChildNodeCreatorStrategy<? super I> creatorStrategy) {
         this.baseItemModelType = baseItemModelType;
+        this.eager = eager;
         this.baseItemType = baseItemModelType.getConcreteClass();
         this.creatorStrategy = creatorStrategy;
     }
@@ -126,7 +128,7 @@ public class ModelMapModelProjection<I> implements ModelProjection {
 
     private <S extends I> ModelView<ModelMap<S>> toView(ModelRuleDescriptor sourceDescriptor, MutableModelNode node, Class<S> itemClass) {
         ModelType<S> itemType = ModelType.of(itemClass);
-        ModelMap<I> builder = new NodeBackedModelMap<I>(baseItemModelType, sourceDescriptor, node, creatorStrategy);
+        ModelMap<I> builder = new NodeBackedModelMap<I>(baseItemModelType, sourceDescriptor, node, eager, creatorStrategy);
 
         ModelMap<S> subBuilder = builder.withType(itemClass);
         ModelType<ModelMap<S>> viewType = ModelTypes.modelMap(itemType);
@@ -167,6 +169,6 @@ public class ModelMapModelProjection<I> implements ModelProjection {
 
     @Override
     public Optional<String> getValueDescription(MutableModelNode modelNodeInternal) {
-      return Optional.absent();
+        return Optional.absent();
     }
 }

@@ -126,14 +126,14 @@ abstract class AbstractNativeComponentPluginTest extends Specification {
         def components = realizeComponents()
         def exe = components.exe
         with(exe.sources."$pluginName") {
-            source.srcDirs*.name == ["d1", "d2"]
-            exportedHeaders.srcDirs*.name == ["h1", "h2"]
+            source.srcDirs*.name == [pluginName, "d1", "d2"]
+            exportedHeaders.srcDirs*.name == ["headers", "h1", "h2"]
         }
 
         def lib = components.lib
         with(lib.sources."$pluginName") {
-            source.srcDirs*.name == ["d3"]
-            exportedHeaders.srcDirs*.name == ["h3"]
+            source.srcDirs*.name == [pluginName, "d3"]
+            exportedHeaders.srcDirs*.name == ["headers", "h3"]
         }
     }
 

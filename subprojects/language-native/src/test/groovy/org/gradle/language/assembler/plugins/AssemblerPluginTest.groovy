@@ -80,7 +80,7 @@ class AssemblerPluginTest extends Specification {
         }
 
         expect:
-        realizeComponents().exe.sources.asm.source.srcDirs*.name == ["d1", "d2"]
+        realizeComponents().exe.sources.asm.source.srcDirs*.name == ["asm", "d1", "d2"]
     }
 
     def "creates assemble tasks for each non-empty executable source set "() {

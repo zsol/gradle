@@ -682,6 +682,11 @@ public class DefaultModelRegistry implements ModelRegistry {
         }
 
         @Override
+        public <T> void setPrivateData(Class<? super T> type, T object) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public <T> void setPrivateData(ModelType<? super T> type, T object) {
             throw new UnsupportedOperationException();
         }
@@ -692,7 +697,17 @@ public class DefaultModelRegistry implements ModelRegistry {
         }
 
         @Override
+        public <T> T getPrivateData(Class<T> type) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void ensureUsable() {
+        }
+
+        @Override
+        public void realize() {
+
         }
 
         @Override
@@ -723,6 +738,11 @@ public class DefaultModelRegistry implements ModelRegistry {
             return node;
         }
 
+        @Override
+        public <T> T getPrivateData(Class<T> type) {
+            return getPrivateData(ModelType.of(type));
+        }
+
         public <T> T getPrivateData(ModelType<T> type) {
             if (privateData == null) {
                 return null;
@@ -737,6 +757,11 @@ public class DefaultModelRegistry implements ModelRegistry {
         @Override
         public Object getPrivateData() {
             return privateData;
+        }
+
+        @Override
+        public <T> void setPrivateData(Class<? super T> type, T object) {
+            setPrivateData(ModelType.of(type), object);
         }
 
         public <T> void setPrivateData(ModelType<? super T> type, T object) {
@@ -986,6 +1011,11 @@ public class DefaultModelRegistry implements ModelRegistry {
         public void ensureUsable() {
             transition(this, Initialized, true);
         }
+
+        @Override
+        public void realize() {
+            close(this);
+        }
     }
 
     private class GoalGraph {
@@ -1023,6 +1053,7 @@ public class DefaultModelRegistry implements ModelRegistry {
             VisitingDependencies,
             Achieved,
         }
+
         public State state = State.NotSeen;
 
         /**
