@@ -11,11 +11,20 @@ This specification is a proposal for the introduction of a top-level credentials
 * There is on-going work in progress to improve and encourage the re-use of `org.gradle.api.internal.artifacts.repositories.transport.RepositoryTransport`'s. One of the goals of this work is to
 make it easier to contribute new `RepositoryTransport`'s from both within Gradle and via community plugins. A unified approach to modeling and configuring credentials will help achieve this goal.
 
-# Use Cases
-* Provide specific credential types to support authenticated components.
-* Make it easy for build authors and plugin developers to add new Credential types.
-* Provide a DSL for defining credentials at the project level.
-* Enhance the existing repository transports to work with these new Credential types.
+# Stories
+* A repository transport is configured with zero or more authentication protocols. An 'authentication protocol' represents how authentication is carried out. e.g
+ - Use EC2'S instance metadata service to authenticate a with an AWS S3 repository.
+ - Use basic, preemptive auth to authenticate with a repository over HTTPS.
+ - Use public key authentication to authenticate with a repository over SFTP.
+An authentication protocol is __not__ a transport protocol (HTTP, FTP, etc.)
+
+* An authentication protocol may accept zero or more types of credentials.
+ - When the protocol does not accept any credential types it implies that the protocol implementation knows how to authenticate without any build configuration. e.g. AWS Instance Metadata.
+ - When the protocol is configured with more than one type of credentials the protocol should attempt to authenticate with each type of credentials until one succeeds.
+
+* Credentials should represent
+
+
 
 # Implementation Plan
 
@@ -30,51 +39,73 @@ make it easier to contribute new `RepositoryTransport`'s from both within Gradle
 * Add a `CredentialsContainer` to `org.gradle.api.internal.project.AbstractProject` similar to `org.gradle.api.artifacts.ConfigurationContainer`
 * Provide an interface `Secured` which components requiring Credentials must implement. This interface should contain a method which identifies the credential types accepted by the implementing
 component in order to avoid mis-configuration.
-* Provide a way for build authors and external plugins to add custom credential implementations
-  * Credential classes defined in:
-    * buildSrc
-    * external plugins
-    * gradle build files
 
 * Support configuring components with multiple `Credentials` instances - including multiple instances of the same credential type.
-* Enhance the existing `repositories` DLS and infrastructure to support credentials from the `CredentialsContainer`
 * `org.gradle.api.artifacts.repositories.AuthenticationSupported` must remain backward compatible to support the existing DSL for configuring repository credentials.
-* Refactor the AWS S3 repository transport to use this proposed credentials container.
 
 
-# User visible changes
-The following snippet is the proposed DSL structure for adding credential types to the credentials container:  
-```groovy
+## Proposed DSL
+
+```
 credentials {
-    awsKey(AwsKeyCredentials) {
+    awsAccessKeyCreds(AwsKeyCredentials) {
         accessKey = 'xxx'
         secretKey = 'xxx'
     }
-    awsIm(AwsIMCredentials) //Purposely empty
 
-    ssh(PublicKeyCredentials) {
-        ....
+    publicKeyCreds(PublicKeyCredentials) {
+        publicKeyLocation = "~/.ssh/id_rsa.pub"
+    }
+
+    basicAuthCreds(PasswordCredentials) {
+        username = 'x'
+        password = 'y'
+    }
+
+    secondaryBasicCreds(PasswordCredentials) {
+        username = 'xx'
+        password = 'yy'
     }
 }
-```
-* The credentials type/class is mandatory.
 
-Anything which uses credentials (implements `Secured`) can be configured as follows:
-```groovy
+
 repositories {
     maven {
-        url "s3://repo.mycompany.com:22/maven2"
-        credentials([awsKey, awsIm]) //Multiple
+        url 's3://somewhere/bucket'
+        //Multiple auth protocols
+        authentication(AwsEnvironmentVarAccessKeyAuth)
+        authentication(AwsAccessKeyAuth) {
+            credentials(awsAccessKeyCreds)
+        }
+        //Auth protocol without credentials
+        authentication(AwsInstanceMetadataAuth) {
+            timeOut = 3000
+        }
     }
 
     maven {
-        url "ssh://repo.mycompany.com:22/maven2"
-        credentials(ssh)
+        url 'https://repo.somewhere.com/maven'
+        //Auth protocol with credentials and configuration
+        authentication(BasicAuth) {
+            preemptive = true
+            credentials(basicAuthCreds)
+        }
+    }
+
+    maven {
+        url 'https://repo.somewhere.com/maven'
+        //Auth protocol with multiple credentials
+        authentication(BasicAuth) {
+            credentials(basicAuthCreds)
+            credentials(secondaryBasicCreds)
+        }
+    }
+
+    maven {
+        url 'sftp://someDrive/maven'
+        authentication(PublickeyAuth) {
+            credentials(publicKeyCreds)
+        }
     }
 }
 ```
-# Error Handling
-* Early detection of unsupported credentials: if components implementing the 'Secured' interface are required to identify which credential types they accept, bad configurations can be detected early.
-* The existing repository components should be ehhanced with some smarts to detect bad configuration, i.e. http backed repositories cannot be configured with `AwsKeyCredentials`
-
-
