@@ -20,8 +20,10 @@ import org.gradle.integtests.fixtures.executer.GradleDistribution
 import org.gradle.integtests.fixtures.executer.GradleHandle
 import org.gradle.integtests.fixtures.executer.IntegrationTestBuildContext
 import org.gradle.integtests.fixtures.versions.ReleasedVersionDistributions
+import org.gradle.integtests.tooling.fixture.TargetGradleVersion
 import org.gradle.integtests.tooling.fixture.TextUtil
 import org.gradle.integtests.tooling.fixture.ToolingApi
+import org.gradle.integtests.tooling.fixture.ToolingApiVersion
 import org.gradle.test.fixtures.file.TestFile
 import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.model.GradleProject
@@ -268,5 +270,34 @@ allprojects {
         }
 
         handle.waitForFinish()
+    }
+
+    @ToolingApiVersion(">=2.4")
+    @TargetGradleVersion(">=2.4")
+    def "tooling api reports a sensible exception when a dependency does not exist"() {
+        projectDir.file('build.gradle').text = """
+apply plugin: 'java'
+
+repositories {
+      maven { url "https://repo.gradle.org/gradle/repo" }
+}
+dependencies{
+  compile ":codenarc:0.22"
+}
+"""
+        projectDir.file("src/main/java/Main.java") << """
+            public class Main {}
+"""
+
+
+        executer.withTasks('wrapper').run()
+
+        when:
+        toolingApi.withConnection { connection ->
+            connection.newBuild().forTasks('check').run()
+        }
+
+        then:
+        true
     }
 }
