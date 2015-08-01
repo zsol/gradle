@@ -20,7 +20,10 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.internal.artifacts.ArtifactDependencyResolver;
+import org.gradle.api.internal.artifacts.repositories.ResolutionAwareRepository;
+import org.gradle.internal.Transformers;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.jvm.JarBinarySpec;
 import org.gradle.jvm.JvmBinarySpec;
@@ -41,9 +44,11 @@ import org.gradle.model.RuleSource;
 import org.gradle.platform.base.BinarySpec;
 import org.gradle.platform.base.LanguageType;
 import org.gradle.platform.base.LanguageTypeBuilder;
+import org.gradle.util.CollectionUtils;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -100,6 +105,8 @@ public class JavaLanguagePlugin implements Plugin<Project> {
                     JarBinarySpec binary = (JarBinarySpec) binarySpec;
 
                     ArtifactDependencyResolver dependencyResolver = serviceRegistry.get(ArtifactDependencyResolver.class);
+                    RepositoryHandler repositories = serviceRegistry.get(RepositoryHandler.class);
+                    List<ResolutionAwareRepository> resolutionAwareRepositories = CollectionUtils.collect(repositories, Transformers.cast(ResolutionAwareRepository.class));
 
                     compile.setDescription(String.format("Compiles %s.", javaSourceSet));
                     compile.setDestinationDir(binary.getClassesDir());
@@ -107,7 +114,7 @@ public class JavaLanguagePlugin implements Plugin<Project> {
                     compile.setPlatform(binary.getTargetPlatform());
 
                     compile.setSource(javaSourceSet.getSource());
-                    DependencyResolvingClasspath classpath = new DependencyResolvingClasspath(binary, (DependentSourceSetInternal) javaSourceSet, dependencyResolver);
+                    DependencyResolvingClasspath classpath = new DependencyResolvingClasspath(binary, (DependentSourceSetInternal) javaSourceSet, dependencyResolver, resolutionAwareRepositories);
                     compile.setClasspath(classpath);
                     compile.setTargetCompatibility(binary.getTargetPlatform().getTargetCompatibility().toString());
                     compile.setSourceCompatibility(binary.getTargetPlatform().getTargetCompatibility().toString());

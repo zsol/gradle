@@ -15,7 +15,6 @@
  */
 package org.gradle.jvm.internal;
 
-import com.google.common.collect.Lists;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.internal.artifacts.ArtifactDependencyResolver;
 import org.gradle.api.internal.artifacts.GlobalDependencyResolutionRules;
@@ -47,7 +46,7 @@ import java.util.Set;
 
 public class DependencyResolvingClasspath extends AbstractFileCollection {
     private final GlobalDependencyResolutionRules globalRules = GlobalDependencyResolutionRules.NO_OP;
-    private final List<ResolutionAwareRepository> remoteRepositories = Lists.newArrayList();
+    private final List<ResolutionAwareRepository> remoteRepositories;
     private final JarBinarySpec binary;
     private final DependentSourceSetInternal sourceSet;
     private final ArtifactDependencyResolver dependencyResolver;
@@ -58,10 +57,12 @@ public class DependencyResolvingClasspath extends AbstractFileCollection {
     public DependencyResolvingClasspath(
             JarBinarySpec binarySpec,
             DependentSourceSetInternal sourceSet,
-            ArtifactDependencyResolver dependencyResolver) {
+            ArtifactDependencyResolver dependencyResolver,
+            List<ResolutionAwareRepository> remoteRepositories) {
         this.binary = binarySpec;
         this.sourceSet = sourceSet;
         this.dependencyResolver = dependencyResolver;
+        this.remoteRepositories = remoteRepositories;
         resolveContext = new DependentSourceSetResolveContext(binary.getId(), sourceSet, DefaultVariantsMetaData.extractFrom(binary));
     }
 
