@@ -173,9 +173,8 @@ public class FileBackedBlockStore implements BlockStore {
             long pos = getPos().getPos();
             file.seek(pos);
 
-            Crc32OutputStream checkSumOutputStream = new Crc32OutputStream(new BufferedOutputStream(
-                    new RandomAccessFileOutputStream(file)));
-            DataOutputStream outputStream = new DataOutputStream(checkSumOutputStream);
+            Crc32OutputStream checkSumOutputStream = new Crc32OutputStream(new RandomAccessFileOutputStream(file));
+            DataOutputStream outputStream = new DataOutputStream(new BufferedOutputStream(checkSumOutputStream));
 
             BlockPayload payload = getPayload();
 
@@ -188,6 +187,7 @@ public class FileBackedBlockStore implements BlockStore {
             // Write body
             payload.write(outputStream);
 
+            outputStream.flush();
             // Write checksum
             outputStream.writeLong(checkSumOutputStream.checksum.getValue());
             outputStream.close();
