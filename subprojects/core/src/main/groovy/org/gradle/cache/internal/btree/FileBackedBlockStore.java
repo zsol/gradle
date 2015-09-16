@@ -20,7 +20,7 @@ import org.gradle.internal.io.RandomAccessFileInputStream;
 import org.gradle.internal.io.RandomAccessFileOutputStream;
 
 import java.io.*;
-import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
 public class FileBackedBlockStore implements BlockStore {
     private RandomAccessFile file;
@@ -245,11 +245,11 @@ public class FileBackedBlockStore implements BlockStore {
     }
 
     private static class Crc32InputStream extends FilterInputStream {
-        private final CRC32 checksum;
+        private final Checksum checksum;
 
         private Crc32InputStream(InputStream inputStream) {
             super(inputStream);
-            checksum = new CRC32();
+            checksum = new PureJavaCrc32();
         }
 
         @Override
@@ -281,11 +281,11 @@ public class FileBackedBlockStore implements BlockStore {
     }
 
     private static class Crc32OutputStream extends FilterOutputStream {
-        private final CRC32 checksum;
+        private final Checksum checksum;
 
         private Crc32OutputStream(OutputStream outputStream) {
             super(outputStream);
-            this.checksum = new CRC32();
+            this.checksum = new PureJavaCrc32();
         }
 
         @Override
@@ -296,7 +296,7 @@ public class FileBackedBlockStore implements BlockStore {
 
         @Override
         public void write(byte[] bytes) throws IOException {
-            checksum.update(bytes);
+            checksum.update(bytes, 0, bytes.length);
             out.write(bytes);
         }
 
