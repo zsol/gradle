@@ -65,7 +65,7 @@ public class MultiParentClassLoader extends ClassLoader implements ClassLoaderHi
                 // Expected
             }
         }
-        throw new ClassNotFoundException(String.format("%s not found.", name));
+        throw new NoStackClassNotFoundException(String.format("%s not found.", name));
     }
 
     @Override

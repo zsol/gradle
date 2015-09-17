@@ -38,7 +38,7 @@ public abstract class TransformingClassLoader extends MutableURLClassLoader {
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         URL resource = findResource(name.replace(".", "/") + ".class");
         if (resource == null) {
-            throw new ClassNotFoundException(name);
+            throw new NoStackClassNotFoundException(name);
         }
         byte[] bytes;
         try {

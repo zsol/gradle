@@ -36,7 +36,7 @@ public class CachingClassLoader extends ClassLoader implements ClassLoaderHierar
         if (cachedValue instanceof Class) {
             return (Class<?>) cachedValue;
         } else if (cachedValue == MISSING_CLASS) {
-            throw new ClassNotFoundException(name);
+            throw new NoStackClassNotFoundException(name);
         }
         Class<?> result;
         try {
