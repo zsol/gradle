@@ -17,6 +17,7 @@
 package org.gradle.api.internal.plugins;
 
 import groovy.lang.MissingPropertyException;
+import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.gradle.api.internal.BeanDynamicObject;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
 
@@ -43,7 +44,7 @@ public class ExtraPropertiesDynamicObjectAdapter extends BeanDynamicObject {
     @Override
     public void setProperty(String name, Object value) throws MissingPropertyException {
         if (!hasProperty(name)) {
-            throw new MissingPropertyException(name, delegateType);
+            throw new MissingPropertyExceptionNoStack(name, delegateType);
         }
 
         super.setProperty(name, value);
