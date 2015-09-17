@@ -22,6 +22,7 @@ import org.gradle.internal.reflect.JavaReflectionUtil;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * A ClassLoader which hides all non-system classes, packages and resources. Allows certain non-system packages and classes to be declared as visible. By default, only the Java system classes,
@@ -37,6 +38,7 @@ public class FilteringClassLoader extends ClassLoader implements ClassLoaderHier
     private final Set<String> classNames = new HashSet<String>();
     private final Set<String> disallowedClassNames = new HashSet<String>();
     private final Set<String> disallowedPackagePrefixes = new HashSet<String>();
+    private final Set<String> classNotFoundInExtClassLoader = new ConcurrentSkipListSet<String>();
 
     static {
         EXT_CLASS_LOADER = ClassLoader.getSystemClassLoader().getParent();
@@ -69,10 +71,13 @@ public class FilteringClassLoader extends ClassLoader implements ClassLoaderHier
 
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        try {
-            return EXT_CLASS_LOADER.loadClass(name);
-        } catch (ClassNotFoundException ignore) {
-            // ignore
+        if (!classNotFoundInExtClassLoader.contains(name)) {
+            try {
+                return EXT_CLASS_LOADER.loadClass(name);
+            } catch (ClassNotFoundException ignore) {
+                // ignore
+                classNotFoundInExtClassLoader.add(name);
+            }
         }
 
         if (!classAllowed(name)) {
