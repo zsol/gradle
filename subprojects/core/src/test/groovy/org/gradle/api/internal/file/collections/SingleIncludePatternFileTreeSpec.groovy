@@ -105,8 +105,8 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file2") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file2")) })
         0 * _
     }
 
@@ -117,8 +117,8 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir2") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir2")) })
         0 * _
     }
 
@@ -129,7 +129,7 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
 
         then:
         0 * _
@@ -142,13 +142,17 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file3") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir2") })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file3")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir2")) })
         0 * _
+    }
+
+    boolean compareFiles(File file1, File file2) {
+        file1.absolutePath.equals(file2.absolutePath)
     }
 
     def "include directory recursively"() {
@@ -158,15 +162,15 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file3") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/dir1/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/dir1/file2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/dir1/file3") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file3")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/dir1/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/dir1/file2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/dir1/file3")) })
         0 * _
 
         where:
@@ -180,15 +184,15 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir3") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir1/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir3/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/dir1/file1") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir3")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir1/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir3/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/dir1/file1")) })
         0 * _
     }
 
@@ -199,11 +203,11 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/dir1/file1") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/dir1/file1")) })
         0 * _
     }
 
@@ -214,23 +218,23 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir1/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir1/file2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir1/file3") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file3") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir3") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir3/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir3/file2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir3/file3") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2/dir2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/dir1/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/dir1/file2") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/dir1/file3") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir1/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir1/file2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir1/file3")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file3")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir3")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir3/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir3/file2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir3/file3")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2/dir2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/dir1/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/dir1/file2")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/dir1/file3")) })
         0 * _
     }
 
@@ -241,12 +245,12 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir3") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir1/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir3/file1") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir3")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir1/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir3/file1")) })
         0 * _
     }
 
@@ -257,12 +261,12 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir3") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir1/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir3/file1") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir3")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir1/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir3/file1")) })
         0 * _
     }
 
@@ -273,7 +277,7 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") }) >> { FileVisitDetails details -> details.stopVisiting() }
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) }) >> { FileVisitDetails details -> details.stopVisiting() }
         0 * visitor.visitDir({ it.path.startsWith("dir2") })
         0 * visitor.visitFile({ it.path.startsWith("dir2") })
     }
@@ -285,10 +289,10 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir3") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir1/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir3/file1") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir3")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir1/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir3/file1")) })
         0 * _
     }
 
@@ -299,12 +303,12 @@ class SingleIncludePatternFileTreeSpec extends Specification {
         fileTree.visit(visitor)
 
         then:
-        1 * visitor.visitDir({ it.file == tempDir.file("dir1") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir2") })
-        1 * visitor.visitDir({ it.file == tempDir.file("dir3") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir1/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir2/file1") })
-        1 * visitor.visitFile({ it.file == tempDir.file("dir3/file1") })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir1")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir2")) })
+        1 * visitor.visitDir({ compareFiles(it.file, tempDir.file("dir3")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir1/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir2/file1")) })
+        1 * visitor.visitFile({ compareFiles(it.file, tempDir.file("dir3/file1")) })
         0 * _
     }
 

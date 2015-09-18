@@ -55,8 +55,8 @@ class DefaultJarSnapshotterTest extends Specification {
 
         then:
         2 * analyzer.visitFile(_)
-        1 * hasher.hash(f1)
-        1 * hasher.hash(f2)
+        1 * hasher.hash({ it.absolutePath == f1.absolutePath })
+        1 * hasher.hash({ it.absolutePath == f2.absolutePath })
         1 * analyzer.getAnalysis() >> Stub(ClassSetAnalysisData)
         0 * _._
 

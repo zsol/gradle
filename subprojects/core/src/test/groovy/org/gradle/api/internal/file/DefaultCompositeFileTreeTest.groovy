@@ -44,7 +44,7 @@ class DefaultCompositeFileTreeTest extends WorkspaceTest {
         def composite = new DefaultCompositeFileTree(Arrays.asList(a, b))
 
         then:
-        composite.files == [a1, b1].toSet()
+        composite.files.collect { it.absolutePath } == [a1, b1].collect { it.absolutePath }
     }
 
     def "can visit all files"() {
@@ -56,6 +56,7 @@ class DefaultCompositeFileTreeTest extends WorkspaceTest {
         when:
         def a = fileResolver.resolveFilesAsTree("a")
         def b = fileResolver.resolveFilesAsTree("b")
+
         def composite = new DefaultCompositeFileTree(Arrays.asList(a, b))
 
         and:
@@ -65,7 +66,7 @@ class DefaultCompositeFileTreeTest extends WorkspaceTest {
         }
 
         then:
-        visited.toSet() == [a1, b1].toSet()
+        visited.collect { it.absolutePath } == [a1, b1].collect { it.absolutePath }
     }
 
     def "dependencies are union of dependencies of source trees"() {
