@@ -38,7 +38,7 @@ public class BaseSerializerFactory {
         if (type.equals(Long.class)) {
             return (Serializer) LONG_SERIALIZER;
         }
-        if (type.equals(File.class)) {
+        if (File.class.isAssignableFrom(type)) {
             return (Serializer) FILE_SERIALIZER;
         }
         if (type.equals(byte[].class)) {

@@ -49,7 +49,7 @@ public class Jdk7DirectoryWalker implements DirectoryFileTree.DirectoryWalker {
             Files.walkFileTree(rootDir.toPath(), EnumSet.of(FileVisitOption.FOLLOW_LINKS), 512, new java.nio.file.FileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    FileVisitDetails details = getFileVisitDetails(dir, false);
+                    FileVisitDetails details = getFileVisitDetails(dir, false, attrs);
                     if (directoryDetailsHolder.size()==0 || isAllowed(details, spec)) {
                         directoryDetailsHolder.push(details);
                         if (directoryDetailsHolder.size() > 1 && !postfix) {
@@ -71,15 +71,15 @@ public class Jdk7DirectoryWalker implements DirectoryFileTree.DirectoryWalker {
                         // when FileVisitOption.FOLLOW_LINKS, we only get here when link couldn't be followed
                         throw new GradleException(String.format("Could not list contents of '%s'. Couldn't follow symbolic link.", file));
                     }
-                    FileVisitDetails details = getFileVisitDetails(file, true);
+                    FileVisitDetails details = getFileVisitDetails(file, true, attrs);
                     if (isAllowed(details, spec)) {
                         visitor.visitFile(details);
                     }
                     return checkStopFlag();
                 }
 
-                private FileVisitDetails getFileVisitDetails(Path file, boolean isFile) {
-                    File child = file.toFile();
+                private FileVisitDetails getFileVisitDetails(Path file, boolean isFile, BasicFileAttributes attrs) {
+                    File child = new StatCachingFile(file.toAbsolutePath().toString(), !isFile, attrs.lastModifiedTime().toMillis(), attrs.size());
                     FileVisitDetails dirDetails = directoryDetailsHolder.peek();
                     RelativePath childPath = dirDetails != null ? dirDetails.getRelativePath().append(isFile, child.getName()) : rootPath;
                     return new DefaultFileVisitDetails(child, childPath, stopFlag, fileSystem, fileSystem);
@@ -115,4 +115,63 @@ public class Jdk7DirectoryWalker implements DirectoryFileTree.DirectoryWalker {
             throw new GradleException(String.format("Could not list contents of directory '%s'.", rootDir), e);
         }
     }
+
+    static class StatCachingFile extends File {
+        private final boolean isDirectory;
+        private final long lastModified;
+        private final long length;
+
+        StatCachingFile(String absolutePathname, boolean isDirectory, long lastModified, long length) {
+            super(absolutePathname);
+            this.isDirectory = isDirectory;
+            this.lastModified = lastModified;
+            this.length = length;
+        }
+
+        @Override
+        public boolean exists() {
+            return true;
+        }
+
+        @Override
+        public boolean isDirectory() {
+            return isDirectory;
+        }
+
+        @Override
+        public boolean isFile() {
+            return !isDirectory;
+        }
+
+        @Override
+        public long lastModified() {
+            return lastModified;
+        }
+
+        @Override
+        public long length() {
+            return length;
+        }
+
+        @Override
+        public File getAbsoluteFile() {
+            return this;
+        }
+
+        @Override
+        public File getCanonicalFile() throws IOException {
+            return new StatCachingFile(getCanonicalPath(), isDirectory, lastModified, length);
+        }
+
+        @Override
+        public boolean canRead() {
+            return true;
+        }
+
+        // replace this class with java.io.File in Java serialization
+        private Object writeReplace() throws java.io.ObjectStreamException {
+            return new File(getPath());
+        }
+    }
+
 }
