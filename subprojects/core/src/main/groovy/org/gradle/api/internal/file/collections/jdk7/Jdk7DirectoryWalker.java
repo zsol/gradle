@@ -120,12 +120,14 @@ public class Jdk7DirectoryWalker implements DirectoryFileTree.DirectoryWalker {
         private final boolean isDirectory;
         private final long lastModified;
         private final long length;
+        private final int hashCode;
 
         StatCachingFile(String absolutePathname, boolean isDirectory, long lastModified, long length) {
             super(absolutePathname);
             this.isDirectory = isDirectory;
             this.lastModified = lastModified;
             this.length = length;
+            this.hashCode = super.hashCode();
         }
 
         @Override
@@ -171,6 +173,11 @@ public class Jdk7DirectoryWalker implements DirectoryFileTree.DirectoryWalker {
         // replace this class with java.io.File in Java serialization
         private Object writeReplace() throws java.io.ObjectStreamException {
             return new File(getPath());
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
         }
     }
 
