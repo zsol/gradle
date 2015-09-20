@@ -135,11 +135,13 @@ public class PatternSpecFactory {
     private static class CacheKey {
         private final RelativePath relativePath;
         private final SpecKey specKey;
+        private final int hashCode;
 
 
         private CacheKey(RelativePath relativePath, SpecKey specKey) {
             this.relativePath = relativePath;
             this.specKey = specKey;
+            this.hashCode = Objects.hashCode(relativePath, specKey);
         }
 
 
@@ -160,7 +162,7 @@ public class PatternSpecFactory {
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(relativePath, specKey);
+            return hashCode;
         }
 
         @Override
@@ -176,11 +178,13 @@ public class PatternSpecFactory {
         private final ImmutableList<String> patterns;
         private final boolean include;
         private final boolean caseSensitive;
+        private final int hashCode;
 
         private SpecKey(ImmutableList<String> patterns, boolean include, boolean caseSensitive) {
             this.patterns = patterns;
             this.include = include;
             this.caseSensitive = caseSensitive;
+            this.hashCode = Objects.hashCode(patterns, include, caseSensitive);
         }
 
         @Override
@@ -201,7 +205,7 @@ public class PatternSpecFactory {
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(patterns, include, caseSensitive);
+            return hashCode;
         }
 
         @Override
