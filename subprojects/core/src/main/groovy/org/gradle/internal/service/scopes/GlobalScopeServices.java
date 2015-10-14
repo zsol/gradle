@@ -19,6 +19,7 @@ package org.gradle.internal.service.scopes;
 import com.google.common.collect.Iterables;
 import org.gradle.StartParameter;
 import org.gradle.api.internal.*;
+import org.gradle.api.internal.cache.StringInterner;
 import org.gradle.api.internal.changedetection.state.CachingFileSnapshotter;
 import org.gradle.api.internal.changedetection.state.InMemoryTaskArtifactCache;
 import org.gradle.api.internal.classpath.*;
@@ -208,7 +209,7 @@ public class GlobalScopeServices {
 
     ClassPathSnapshotter createClassPathSnapshotter(GradleBuildEnvironment environment) {
         if (environment.isLongLivingProcess()) {
-            CachingFileSnapshotter fileSnapshotter = new CachingFileSnapshotter(new DefaultHasher(), new NonThreadsafeInMemoryStore());
+            CachingFileSnapshotter fileSnapshotter = new CachingFileSnapshotter(new DefaultHasher(), new NonThreadsafeInMemoryStore(), createStringInterner());
             return new HashClassPathSnapshotter(fileSnapshotter);
         } else {
             return new FileClassPathSnapshotter();
@@ -258,4 +259,7 @@ public class GlobalScopeServices {
         return new DefaultFileWatcherFactory(executorFactory);
     }
 
+    StringInterner createStringInterner() {
+        return new StringInterner();
+    }
 }
