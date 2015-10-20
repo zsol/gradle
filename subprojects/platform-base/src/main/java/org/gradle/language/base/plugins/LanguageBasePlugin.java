@@ -30,6 +30,8 @@ import org.gradle.language.base.ProjectSourceSet;
 import org.gradle.language.base.internal.DefaultProjectSourceSet;
 import org.gradle.language.base.internal.model.ComponentSpecInitializer;
 import org.gradle.language.base.internal.model.FunctionalSourceSetNodeInitializer;
+import org.gradle.language.base.internal.registry.DefaultLanguageRegistry;
+import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.model.*;
 import org.gradle.model.collection.internal.BridgedCollections;
 import org.gradle.model.collection.internal.ChildNodeInitializerStrategyAccessors;
@@ -158,6 +160,11 @@ public class LanguageBasePlugin implements Plugin<Project> {
         @Model
         ProjectSourceSet sources(ServiceRegistry serviceRegistry) {
             return serviceRegistry.get(Instantiator.class).newInstance(DefaultProjectSourceSet.class);
+        }
+
+        @Service
+        LanguageRegistry languages() {
+            return new DefaultLanguageRegistry();
         }
 
         @Mutate

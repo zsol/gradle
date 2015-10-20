@@ -17,7 +17,11 @@
 package org.gradle.platform.base.component
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.language.base.ProjectSourceSet
-import org.gradle.model.internal.core.*
+import org.gradle.language.base.internal.registry.DefaultLanguageRegistry
+import org.gradle.model.internal.core.ModelCreators
+import org.gradle.model.internal.core.ModelNode
+import org.gradle.model.internal.core.ModelReference
+import org.gradle.model.internal.core.ModelRuleExecutionException
 import org.gradle.model.internal.fixture.ModelRegistryHelper
 import org.gradle.platform.base.ComponentSpecIdentifier
 
@@ -27,7 +31,7 @@ class BaseComponentFixtures {
         try {
             modelRegistry.create(
                 ModelCreators.unmanagedInstanceOf(ModelReference.of(componentId.name, type), {
-                    BaseComponentSpec.create(type, componentId, it, allSourceSets, instantiator)
+                    BaseComponentSpec.create(type, componentId, it, allSourceSets, instantiator, new DefaultLanguageRegistry())
                 })
                     .descriptor(componentId.name)
                     .build()

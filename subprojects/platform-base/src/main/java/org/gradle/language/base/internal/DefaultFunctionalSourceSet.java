@@ -21,13 +21,16 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
+import org.gradle.language.base.internal.registry.LanguageRegistry;
 
 public class DefaultFunctionalSourceSet extends AddOnlyRuleAwarePolymorphicDomainObjectContainer<LanguageSourceSet> implements FunctionalSourceSet {
     private final String name;
+    private final LanguageRegistry languageRegistry;
 
-    public DefaultFunctionalSourceSet(String name, Instantiator instantiator, final ProjectSourceSet projectSourceSet) {
+    public DefaultFunctionalSourceSet(String name, Instantiator instantiator, final ProjectSourceSet projectSourceSet, LanguageRegistry languageRegistry) {
         super(LanguageSourceSet.class, instantiator);
         this.name = name;
+        this.languageRegistry = languageRegistry;
         whenObjectAdded(new Action<LanguageSourceSet>() {
             public void execute(LanguageSourceSet languageSourceSet) {
                 projectSourceSet.add(languageSourceSet);

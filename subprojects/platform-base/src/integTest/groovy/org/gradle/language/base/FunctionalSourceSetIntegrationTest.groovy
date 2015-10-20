@@ -15,7 +15,6 @@
  */
 
 package org.gradle.language.base
-
 import org.gradle.api.reporting.model.ModelReportOutput
 import org.gradle.integtests.fixtures.AbstractIntegrationSpec
 
@@ -40,7 +39,7 @@ class FunctionalSourceSetIntegrationTest extends AbstractIntegrationSpec {
     }
 
     def "can create a top level functional source set with a rule"() {
-        buildFile << """
+        buildScript """
         apply plugin: 'language-base'
 
         class Rules extends RuleSource {
@@ -172,5 +171,30 @@ class FunctionalSourceSetIntegrationTest extends AbstractIntegrationSpec {
         buildType.testSources."0".@type[0] == 'org.gradle.language.base.FunctionalSourceSet'
         buildType.testSources."0".@nodeValue[0] == "source set '0'"
         buildType.testSources."0".@creator[0] == 'Rules#addSources > create()'
+    }
+
+    def "can register a language source set"() {
+        buildScript """
+        apply plugin: 'language-base'
+
+        import org.gradle.language.java.internal.DefaultJavaLanguageSourceSet;
+
+        class Rules extends RuleSource {
+            @Model
+            void functionalSources(FunctionalSourceSet sources) {
+
+            }
+
+            @LanguageType
+            void registerLanguage(LanguageTypeBuilder<JavaSourceSet> builder) {
+                builder.setLanguageName("java");
+                builder.defaultImplementation(DefaultJavaLanguageSourceSet.class);
+            }
+
+        }
+        apply plugin: Rules
+        """
+        expect:
+        succeeds "model"
     }
 }
