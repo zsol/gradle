@@ -25,6 +25,8 @@ public abstract class TaskExecution {
     private String taskClass;
     private Map<String, Object> inputProperties;
     private Set<Integer> outputFileNameHashes;
+    private Integer outputFilesHash;
+    private Integer inputFilesHash;
 
     public Set<Integer> getOutputFileNameHashes() {
         return outputFileNameHashes;
@@ -63,4 +65,20 @@ public abstract class TaskExecution {
     public abstract FileCollectionSnapshot getInputFilesSnapshot();
 
     public abstract void setInputFilesSnapshot(FileCollectionSnapshot inputFilesSnapshot);
+
+    public Integer getOutputFilesHash() {
+        return outputFilesHash;
+    }
+
+    public void setOutputFilesHash(Integer outputFilesHash) {
+        this.outputFilesHash = outputFilesHash;
+    }
+
+    public Integer getInputFilesHash() {
+        return inputFilesHash;
+    }
+
+    public void setInputFilesHash(Integer inputFilesHash) {
+        this.inputFilesHash = inputFilesHash;
+    }
 }

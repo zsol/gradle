@@ -107,6 +107,7 @@ public class DefaultTaskArtifactStateRepository implements TaskArtifactStateRepo
         }
 
         public void beforeTask() {
+            getStates().getAllTaskChanges().snapshotBeforeTask();
         }
 
         public void afterTask() {
@@ -118,7 +119,9 @@ public class DefaultTaskArtifactStateRepository implements TaskArtifactStateRepo
             history.update();
         }
 
-        public void finished() {}
+        public void finished(boolean wasUpToDate) {
+            history.finished(wasUpToDate);
+        }
 
         private TaskUpToDateState getStates() {
             if (states == null) {

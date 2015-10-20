@@ -17,20 +17,24 @@
 package org.gradle.api.internal.changedetection.rules
 
 import org.gradle.api.internal.changedetection.state.FileCollectionSnapshot
+import org.gradle.api.internal.changedetection.state.FileCollectionSnapshotter
 import org.gradle.api.internal.changedetection.state.TaskExecution
 import org.gradle.util.ChangeListener
 import spock.lang.Specification
 
 public class InputFilesStateChangeRuleTest extends Specification {
+    def inputSnapshotPreCheck = Mock(FileCollectionSnapshot.PreCheck)
     def inputSnapshot = Mock(FileCollectionSnapshot)
     def previousInputSnapshot = Mock(FileCollectionSnapshot)
+    def fileCollectionSnapshotter = Mock(FileCollectionSnapshotter)
     FileCollectionSnapshot.ChangeIterator<String> changeIterator = Mock()
 
     TaskStateChanges createStateChanges() {
         def previousExecution = Stub(TaskExecution) {
             getInputFilesSnapshot() >> previousInputSnapshot
         }
-        return InputFilesStateChangeRule.create(previousExecution, Mock(TaskExecution), inputSnapshot)
+        fileCollectionSnapshotter.snapshot(_) >> inputSnapshot
+        return InputFilesStateChangeRule.create(previousExecution, Mock(TaskExecution), fileCollectionSnapshotter, inputSnapshotPreCheck)
     }
 
     def "emits change for no previous input snapshot"() {

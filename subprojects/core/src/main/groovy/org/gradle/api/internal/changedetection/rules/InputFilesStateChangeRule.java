@@ -17,6 +17,7 @@ package org.gradle.api.internal.changedetection.rules;
 
 import com.google.common.collect.AbstractIterator;
 import org.gradle.api.internal.changedetection.state.FileCollectionSnapshot;
+import org.gradle.api.internal.changedetection.state.FileCollectionSnapshotter;
 import org.gradle.api.internal.changedetection.state.TaskExecution;
 import org.gradle.util.ChangeListener;
 
@@ -27,31 +28,8 @@ import java.util.Iterator;
  * A rule which detects changes in the input files of a task.
  */
 class InputFilesStateChangeRule {
-    public static TaskStateChanges create(final TaskExecution previousExecution, final TaskExecution currentExecution, final FileCollectionSnapshot inputFilesSnapshot) {
-        return new TaskStateChanges() {
-            public Iterator<TaskStateChange> iterator() {
-                if (previousExecution.getInputFilesSnapshot() == null) {
-                    return Collections.<TaskStateChange>singleton(new DescriptiveChange("Input file history is not available.")).iterator();
-                }
-
-                return new AbstractIterator<TaskStateChange>() {
-                    final FileCollectionSnapshot.ChangeIterator<String> changeIterator = inputFilesSnapshot.iterateChangesSince(previousExecution.getInputFilesSnapshot());
-                    final ChangeListenerAdapter listenerAdapter = new ChangeListenerAdapter();
-
-                    @Override
-                    protected TaskStateChange computeNext() {
-                        if (changeIterator.next(listenerAdapter)) {
-                            return listenerAdapter.lastChange;
-                        }
-                        return endOfData();
-                    }
-                };
-            }
-
-            public void snapshotAfterTask() {
-                currentExecution.setInputFilesSnapshot(inputFilesSnapshot);
-            }
-        };
+    public static InputFilesTaskStateChanges create(final TaskExecution previousExecution, final TaskExecution currentExecution, final FileCollectionSnapshotter inputFilesSnapshotter, final FileCollectionSnapshot.PreCheck inputFilesPrecheckBefore) {
+        return new InputFilesTaskStateChanges(previousExecution, currentExecution, inputFilesSnapshotter, inputFilesPrecheckBefore);
     }
 
     private static class ChangeListenerAdapter implements ChangeListener<String> {
@@ -67,6 +45,65 @@ class InputFilesStateChangeRule {
 
         public void changed(String fileName) {
             lastChange = new InputFileChange(fileName, ChangeType.MODIFIED);
+        }
+    }
+
+    static class InputFilesTaskStateChanges implements TaskStateChanges {
+        private final TaskExecution previousExecution;
+        private final TaskExecution currentExecution;
+        private final FileCollectionSnapshotter inputFilesSnapshotter;
+        private final FileCollectionSnapshot.PreCheck inputFilesPrecheckBefore;
+        private FileCollectionSnapshot inputFilesSnapshot;
+
+        private InputFilesTaskStateChanges(TaskExecution previousExecution, TaskExecution currentExecution, FileCollectionSnapshotter inputFilesSnapshotter, FileCollectionSnapshot.PreCheck inputFilesPrecheckBefore) {
+            this.previousExecution = previousExecution;
+            this.currentExecution = currentExecution;
+            this.inputFilesSnapshotter = inputFilesSnapshotter;
+            this.inputFilesPrecheckBefore = inputFilesPrecheckBefore;
+        }
+
+        public FileCollectionSnapshot getInputFilesSnapshot() {
+            if (inputFilesSnapshot == null) {
+                inputFilesSnapshot = inputFilesSnapshotter.snapshot(inputFilesPrecheckBefore);
+            }
+            return inputFilesSnapshot;
+        }
+
+        @Override
+        public void snapshotBeforeTask() {
+            getInputFilesSnapshot();
+        }
+
+        public Iterator<TaskStateChange> iterator() {
+            if (previousExecution.getInputFilesSnapshot() == null) {
+                return Collections.<TaskStateChange>singleton(new DescriptiveChange("Input file history is not available.")).iterator();
+            }
+
+            return new AbstractIterator<TaskStateChange>() {
+                FileCollectionSnapshot.ChangeIterator<String> changeIterator;
+                final ChangeListenerAdapter listenerAdapter = new ChangeListenerAdapter();
+                int counter;
+
+                @Override
+                protected TaskStateChange computeNext() {
+                    if (changeIterator == null) {
+                        changeIterator = getInputFilesSnapshot().iterateChangesSince(previousExecution.getInputFilesSnapshot());
+                    }
+                    if (changeIterator.next(listenerAdapter)) {
+                        counter++;
+                        return listenerAdapter.lastChange;
+                    }
+                    if(counter == 0 && previousExecution == null && previousExecution.getInputFilesHash() != null) {
+                        previousExecution.setInputFilesHash(inputFilesPrecheckBefore.getHash());
+                    }
+                    return endOfData();
+                }
+            };
+        }
+
+        public void snapshotAfterTask() {
+            currentExecution.setInputFilesHash(inputFilesPrecheckBefore.getHash());
+            currentExecution.setInputFilesSnapshot(getInputFilesSnapshot());
         }
     }
 }
