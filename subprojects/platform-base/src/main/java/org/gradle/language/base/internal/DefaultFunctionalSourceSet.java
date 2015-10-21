@@ -16,11 +16,13 @@
 package org.gradle.language.base.internal;
 
 import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.internal.rules.AddOnlyRuleAwarePolymorphicDomainObjectContainer;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
+import org.gradle.language.base.internal.registry.LanguageRegistration;
 import org.gradle.language.base.internal.registry.LanguageRegistry;
 
 public class DefaultFunctionalSourceSet extends AddOnlyRuleAwarePolymorphicDomainObjectContainer<LanguageSourceSet> implements FunctionalSourceSet {
@@ -37,6 +39,24 @@ public class DefaultFunctionalSourceSet extends AddOnlyRuleAwarePolymorphicDomai
             }
         });
     }
+
+    @Override
+    protected <U extends LanguageSourceSet> U doCreate(String name, Class<U> type) {
+        NamedDomainObjectFactory<? extends LanguageSourceSet> sourceSetFactory = findSourceSetFactory(type);
+        LanguageSourceSet languageSourceSet = sourceSetFactory.create(name);
+        return type.cast(languageSourceSet);
+    }
+
+    private <U extends LanguageSourceSet> NamedDomainObjectFactory<? extends LanguageSourceSet> findSourceSetFactory(Class<U> type) {
+        for (LanguageRegistration<?> languageRegistration : languageRegistry) {
+            Class<? extends LanguageSourceSet> sourceSetType = languageRegistration.getSourceSetType();
+            if (type.equals(sourceSetType)) {
+                return languageRegistration.getSourceSetFactory(getName());
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public String toString() {

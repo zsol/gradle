@@ -15,6 +15,7 @@
  */
 
 package org.gradle.language.base
+
 import org.gradle.api.reporting.model.ModelReportOutput
 import org.gradle.integtests.fixtures.AbstractIntegrationSpec
 
@@ -177,13 +178,45 @@ class FunctionalSourceSetIntegrationTest extends AbstractIntegrationSpec {
         buildScript """
         apply plugin: 'language-base'
 
-        import org.gradle.language.java.internal.DefaultJavaLanguageSourceSet;
+        ${registerJavaLanguage()}
 
         class Rules extends RuleSource {
             @Model
             void functionalSources(FunctionalSourceSet sources) {
-
+                sources.create("javaB", JavaSourceSet)
             }
+        }
+        apply plugin: Rules
+        """
+        expect:
+        succeeds "model"
+    }
+
+    def "can register a language source set via the model dsl"() {
+        buildFile << """
+        ${registerJavaLanguage()}
+
+        model {
+            functionalSources(FunctionalSourceSet){
+                myJavaSourceSet(JavaSourceSet)
+            }
+        }
+        """
+
+        when:
+        succeeds "model"
+
+        then:
+        def modelNode = ModelReportOutput.from(output).modelNode
+        modelNode.functionalSources.@nodeValue[0] == "source set 'functionalSources'"
+        modelNode.sources.@nodeValue[0] == "[Java source 'functionalSources:myJavaSourceSet']"
+    }
+
+    private String registerJavaLanguage() {
+        return """
+            import org.gradle.language.java.internal.DefaultJavaLanguageSourceSet
+
+            class JavaLangRuleSource extends RuleSource {
 
             @LanguageType
             void registerLanguage(LanguageTypeBuilder<JavaSourceSet> builder) {
@@ -192,9 +225,8 @@ class FunctionalSourceSetIntegrationTest extends AbstractIntegrationSpec {
             }
 
         }
-        apply plugin: Rules
+        apply plugin: JavaLangRuleSource
         """
-        expect:
-        succeeds "model"
     }
+
 }
