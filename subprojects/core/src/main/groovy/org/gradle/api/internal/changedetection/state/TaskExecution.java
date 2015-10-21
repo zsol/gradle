@@ -24,14 +24,14 @@ import java.util.Set;
 public abstract class TaskExecution {
     private String taskClass;
     private Map<String, Object> inputProperties;
-    private Set<String> outputFiles;
+    private Set<Integer> outputFileNameHashes;
 
-    public Set<String> getOutputFiles() {
-        return outputFiles;
+    public Set<Integer> getOutputFileNameHashes() {
+        return outputFileNameHashes;
     }
 
-    public void setOutputFiles(Set<String> outputFiles) {
-        this.outputFiles = outputFiles;
+    public void setOutputFileNameHashes(Set<Integer> outputFileNameHashes) {
+        this.outputFileNameHashes = outputFileNameHashes;
     }
 
     public String getTaskClass() {

@@ -15,6 +15,8 @@
  */
 package org.gradle.api.internal.changedetection.state;
 
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import org.gradle.api.internal.TaskInternal;
 import org.gradle.api.internal.cache.StringInterner;
 import org.gradle.cache.PersistentIndexedCache;
@@ -46,7 +48,7 @@ public class CacheBackedTaskHistoryRepository implements TaskHistoryRepository {
         final LazyTaskExecution currentExecution = new LazyTaskExecution();
         currentExecution.snapshotRepository = snapshotRepository;
         currentExecution.cacheAccess = cacheAccess;
-        currentExecution.setOutputFiles(outputFiles(task));
+        currentExecution.setOutputFileNameHashes(outputFilenameHashes(task));
         final LazyTaskExecution previousExecution = findPreviousExecution(currentExecution, history);
         if (previousExecution != null) {
             previousExecution.snapshotRepository = snapshotRepository;
@@ -110,33 +112,35 @@ public class CacheBackedTaskHistoryRepository implements TaskHistoryRepository {
         });
     }
 
-    private Set<String> outputFiles(TaskInternal task) {
-        Set<String> outputFiles = new HashSet<String>();
+    private Set<Integer> outputFilenameHashes(TaskInternal task) {
+        Set<Integer> outputFilenameHashes = new HashSet<Integer>();
+        HashFunction hashFunction = Hashing.murmur3_32();
         for (File file : task.getOutputs().getFiles()) {
-            outputFiles.add(stringInterner.intern(file.getAbsolutePath()));
+            int hash = hashFunction.hashUnencodedChars(file.getAbsolutePath()).asInt();
+            outputFilenameHashes.add(hash);
         }
-        return outputFiles;
+        return outputFilenameHashes;
     }
 
     private LazyTaskExecution findPreviousExecution(TaskExecution currentExecution, TaskHistory history) {
-        Set<String> outputFiles = currentExecution.getOutputFiles();
+        Set<Integer> outputFilenameHashes = currentExecution.getOutputFileNameHashes();
         LazyTaskExecution bestMatch = null;
         int bestMatchOverlap = 0;
         for (LazyTaskExecution configuration : history.configurations) {
-            if (outputFiles.size() == 0) {
-                if (configuration.getOutputFiles().size() == 0) {
+            if (outputFilenameHashes.size() == 0) {
+                if (configuration.getOutputFileNameHashes().size() == 0) {
                     bestMatch = configuration;
                     break;
                 }
             }
 
-            Set<String> intersection = new HashSet<String>(outputFiles);
-            intersection.retainAll(configuration.getOutputFiles());
+            Set<Integer> intersection = new HashSet<Integer>(outputFilenameHashes);
+            intersection.retainAll(configuration.getOutputFileNameHashes());
             if (intersection.size() > bestMatchOverlap) {
                 bestMatch = configuration;
                 bestMatchOverlap = intersection.size();
             }
-            if (bestMatchOverlap == outputFiles.size()) {
+            if (bestMatchOverlap == outputFilenameHashes.size()) {
                 break;
             }
         }
@@ -277,12 +281,12 @@ public class CacheBackedTaskHistoryRepository implements TaskHistoryRepository {
                 execution.outputFilesSnapshotId = decoder.readLong();
                 execution.discoveredFilesSnapshotId = decoder.readLong();
                 execution.setTaskClass(decoder.readString());
-                int outputFiles = decoder.readInt();
-                Set<String> files = new HashSet<String>();
-                for (int j = 0; j < outputFiles; j++) {
-                    files.add(stringInterner.intern(decoder.readString()));
+                int filenameHashCount = decoder.readInt();
+                Set<Integer> filenameHashes = new HashSet<Integer>();
+                for (int j = 0; j < filenameHashCount; j++) {
+                    filenameHashes.add(decoder.readInt());
                 }
-                execution.setOutputFiles(files);
+                execution.setOutputFileNameHashes(filenameHashes);
 
                 boolean inputProperties = decoder.readBoolean();
                 if (inputProperties) {
@@ -299,9 +303,9 @@ public class CacheBackedTaskHistoryRepository implements TaskHistoryRepository {
                 encoder.writeLong(execution.outputFilesSnapshotId);
                 encoder.writeLong(execution.discoveredFilesSnapshotId);
                 encoder.writeString(execution.getTaskClass());
-                encoder.writeInt(execution.getOutputFiles().size());
-                for (String outputFile : execution.getOutputFiles()) {
-                    encoder.writeString(outputFile);
+                encoder.writeInt(execution.getOutputFileNameHashes().size());
+                for (Integer outputFileNameHash : execution.getOutputFileNameHashes()) {
+                    encoder.writeInt(outputFileNameHash);
                 }
                 if (execution.getInputProperties() == null || execution.getInputProperties().isEmpty()) {
                     encoder.writeBoolean(false);
