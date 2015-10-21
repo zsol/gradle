@@ -72,9 +72,7 @@ public abstract class BaseComponentSpec implements ComponentSpecInternal {
                 @Override
                 public <S extends LanguageSourceSet> S create(String name, Class<S> type) {
                     FunctionalSourceSet sourceSet = modelNode.getPrivateData(FunctionalSourceSet.class);
-                    S s = sourceSet.getEntityInstantiator().create(name, type);
-                    sourceSet.add(s);
-                    return s;
+                    return sourceSet.create(name, type);
                 }
             };
         }

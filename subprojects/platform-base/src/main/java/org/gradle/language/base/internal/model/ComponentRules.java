@@ -17,9 +17,7 @@
 package org.gradle.language.base.internal.model;
 
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.internal.registry.LanguageRegistration;
 import org.gradle.language.base.internal.registry.LanguageRegistry;
@@ -63,15 +61,15 @@ public class ComponentRules extends RuleSource {
         }
 
         public void execute(ComponentSpecInternal componentSpecInternal) {
-            registerLanguageSourceSetFactory(componentSpecInternal);
+//            registerLanguageSourceSetFactory(componentSpecInternal);
             createDefaultSourceSetForComponents(componentSpecInternal);
         }
 
-        void registerLanguageSourceSetFactory(final ComponentSpecInternal component) {
-            final FunctionalSourceSet functionalSourceSet = component.getFunctionalSourceSet();
-            NamedDomainObjectFactory<? extends U> sourceSetFactory = languageRegistration.getSourceSetFactory(functionalSourceSet.getName());
-            functionalSourceSet.registerFactory(languageRegistration.getSourceSetType(), sourceSetFactory);
-        }
+//        void registerLanguageSourceSetFactory(final ComponentSpecInternal component) {
+//            final FunctionalSourceSet functionalSourceSet = component.getFunctionalSourceSet();
+//            NamedDomainObjectFactory<? extends U> sourceSetFactory = languageRegistration.getSourceSetFactory(functionalSourceSet.getName());
+//            functionalSourceSet.registerFactory(languageRegistration.getSourceSetType(), sourceSetFactory);
+//        }
 
         // If there is a transform for the language into one of the component inputs, add a default source set
         void createDefaultSourceSetForComponents(final ComponentSpecInternal component) {
