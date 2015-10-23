@@ -15,8 +15,8 @@
  */
 
 package org.gradle.language
-
 import groovy.io.FileType
+import groovy.transform.NotYetImplemented
 import org.gradle.integtests.fixtures.CompilationOutputsFixture
 import org.gradle.nativeplatform.fixtures.AbstractInstalledToolChainIntegrationSpec
 import org.gradle.nativeplatform.fixtures.app.IncrementalHelloWorldApp
@@ -108,6 +108,7 @@ abstract class AbstractNativeLanguageIncrementalCompileIntegrationTest extends A
 
     def "recompiles only source file that includes changed header file"() {
         given:
+        executer.withArgument("--info")
         sourceFile << """
             #include "${otherHeaderFile.name}"
 """
@@ -227,9 +228,14 @@ abstract class AbstractNativeLanguageIncrementalCompileIntegrationTest extends A
         outputs.noneRecompiled()
     }
 
+    // We use the include path as a property, so these tests aren't valid
+    // if we had a way of mapping source -> includes, we might be able to do this again
+    @NotYetImplemented
     @Unroll
     def "does not recompile when include path has #testCase"() {
         given:
+        // buildFile << "tasks.withType(CCompile) { doLast { println 'HERE ' + inputs.files.files } }"
+        executer.withArgument("--info")
         outputs.snapshot { run "mainExecutable" }
 
         file("src/additional-headers/other.h") << """
