@@ -334,6 +334,8 @@ public class DefaultTaskArtifactStateRepositoryTest extends Specification {
 
         when:
         TaskArtifactState state = repository.getStateFor(task1)
+        state.beforeTask()
+        task1.execute()
         state.afterTask()
 
         then:
@@ -350,6 +352,7 @@ public class DefaultTaskArtifactStateRepositoryTest extends Specification {
         !state.isUpToDate([])
 
         when:
+        state.beforeTask()
         task2.execute()
         state.afterTask()
 
@@ -462,6 +465,7 @@ public class DefaultTaskArtifactStateRepositoryTest extends Specification {
         !state.isUpToDate([])
 
         when:
+        state.beforeTask()
         task.execute()
         otherFile.write("new content")
         state.afterTask()
@@ -479,6 +483,7 @@ public class DefaultTaskArtifactStateRepositoryTest extends Specification {
 
         outputDirFile.delete()
         TaskArtifactState state = repository.getStateFor(task)
+        state.beforeTask()
         state.afterTask()
 
         when:
@@ -545,7 +550,7 @@ public class DefaultTaskArtifactStateRepositoryTest extends Specification {
 
     private void outOfDate(TaskInternal task) {
         final state = repository.getStateFor(task)
-        assert !state.upToDate
+        assert !state.isUpToDate([])
         assert !state.inputChanges.incremental
     }
 
@@ -590,6 +595,7 @@ public class DefaultTaskArtifactStateRepositoryTest extends Specification {
         for (TaskInternal task : tasks) {
             TaskArtifactState state = repository.getStateFor(task)
             state.isUpToDate([])
+            state.beforeTask()
             task.execute()
             state.afterTask()
         }

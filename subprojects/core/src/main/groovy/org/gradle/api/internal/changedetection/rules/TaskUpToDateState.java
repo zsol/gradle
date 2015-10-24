@@ -16,18 +16,22 @@
 
 package org.gradle.api.internal.changedetection.rules;
 
+import com.google.common.collect.Iterators;
 import org.gradle.api.UncheckedIOException;
 import org.gradle.api.internal.TaskInternal;
 import org.gradle.api.internal.changedetection.state.*;
+import org.gradle.internal.Factory;
+
+import java.util.Iterator;
 
 /**
  * Represents the complete changes in a tasks state
  */
 public class TaskUpToDateState {
     private static final int MAX_OUT_OF_DATE_MESSAGES = 3;
-    private final FilesSnapshotSet inputFilesSnapshot;
 
     private TaskStateChanges noHistoryState;
+    private InputFilesStateChangeRule.InputFilesTaskStateChanges directInputFilesState;
     private TaskStateChanges inputFilesState;
     private DiscoveredTaskStateChanges discoveredInputFilesState;
     private TaskStateChanges inputPropertiesState;
@@ -36,29 +40,15 @@ public class TaskUpToDateState {
     private SummaryTaskStateChanges allTaskChanges;
     private SummaryTaskStateChanges rebuildChanges;
 
-    public TaskUpToDateState(TaskInternal task, TaskHistoryRepository.History history, FileCollectionSnapshotter outputFilesSnapshotter, FileCollectionSnapshotter inputFilesSnapshotter) {
-        TaskExecution thisExecution = history.getCurrentExecution();
-        TaskExecution lastExecution = history.getPreviousExecution();
+    public TaskUpToDateState(final TaskInternal task, TaskHistoryRepository.History history, final FileCollectionSnapshotter outputFilesSnapshotter, final FileCollectionSnapshotter inputFilesSnapshotter) {
+        final TaskExecution thisExecution = history.getCurrentExecution();
+        final TaskExecution lastExecution = history.getPreviousExecution();
 
         noHistoryState = NoHistoryStateChangeRule.create(task, lastExecution);
         taskTypeState = TaskTypeStateChangeRule.create(task, lastExecution, thisExecution);
         inputPropertiesState = InputPropertiesStateChangeRule.create(task, lastExecution, thisExecution);
-
-        // Capture outputs state
-        try {
-            outputFilesState = caching(OutputFilesStateChangeRule.create(task, lastExecution, thisExecution, outputFilesSnapshotter));
-        } catch (UncheckedIOException e) {
-            throw new UncheckedIOException(String.format("Failed to capture snapshot of output files for task '%s' during up-to-date check.  See stacktrace for details.", task.getName()), e);
-        }
-
-        // Capture inputs state
-        try {
-            FileCollectionSnapshot inputFilesSnapshot = inputFilesSnapshotter.snapshot(task.getInputs().getFiles());
-            this.inputFilesSnapshot = inputFilesSnapshot.getSnapshot();
-            inputFilesState = caching(InputFilesStateChangeRule.create(lastExecution, thisExecution, inputFilesSnapshot));
-        } catch (UncheckedIOException e) {
-            throw new UncheckedIOException(String.format("Failed to capture snapshot of input files for task '%s' during up-to-date check.  See stacktrace for details.", task.getName()), e);
-        }
+        createOutputFilesState(task, outputFilesSnapshotter, thisExecution, lastExecution);
+        createInputFilesState(task, inputFilesSnapshotter, thisExecution, lastExecution);
 
         // Capture discovered inputs state from previous execution
         try {
@@ -70,6 +60,53 @@ public class TaskUpToDateState {
         TaskStateChanges cachedDiscoveredInputFilesState = caching(discoveredInputFilesState);
         allTaskChanges = new SummaryTaskStateChanges(MAX_OUT_OF_DATE_MESSAGES, noHistoryState, taskTypeState, inputPropertiesState, outputFilesState, inputFilesState, cachedDiscoveredInputFilesState);
         rebuildChanges = new SummaryTaskStateChanges(1, noHistoryState, taskTypeState, inputPropertiesState, outputFilesState, cachedDiscoveredInputFilesState);
+    }
+
+    private void createInputFilesState(TaskInternal task, final FileCollectionSnapshotter inputFilesSnapshotter, final TaskExecution thisExecution, final TaskExecution lastExecution) {
+        // Capture inputs state
+        try {
+            final FileCollectionSnapshot.PreCheck inputFilesPrecheckBefore = inputFilesSnapshotter.preCheck(task.getInputs().getFiles());
+            final Factory<InputFilesStateChangeRule.InputFilesTaskStateChanges> directInputFilesStateFactory = new Factory<InputFilesStateChangeRule.InputFilesTaskStateChanges>() {
+                @Override
+                public InputFilesStateChangeRule.InputFilesTaskStateChanges create() {
+                    return InputFilesStateChangeRule.create(lastExecution, thisExecution, inputFilesSnapshotter, inputFilesPrecheckBefore);
+                }
+            };
+            final Factory<TaskStateChanges> inputFilesStateFactory = new Factory<TaskStateChanges>() {
+                @Override
+                public TaskStateChanges create() {
+                    directInputFilesState = directInputFilesStateFactory.create();
+                    return caching(directInputFilesState);
+                }
+            };
+            if (lastExecution != null && lastExecution.getInputFilesHash() != null && lastExecution.getInputFilesHash().equals(inputFilesPrecheckBefore.getHash())) {
+                inputFilesState = new LazyNoChangesTaskStateChanges(inputFilesStateFactory);
+            } else {
+                inputFilesState = inputFilesStateFactory.create();
+            }
+        } catch (UncheckedIOException e) {
+            throw new UncheckedIOException(String.format("Failed to capture snapshot of input files for task '%s' during up-to-date check.  See stacktrace for details.", task.getName()), e);
+        }
+    }
+
+    private void createOutputFilesState(final TaskInternal task, final FileCollectionSnapshotter outputFilesSnapshotter, final TaskExecution thisExecution, final TaskExecution lastExecution) {
+        // Capture outputs state
+        try {
+            final FileCollectionSnapshot.PreCheck outputFilesPrecheckBefore = outputFilesSnapshotter.preCheck(task.getOutputs().getFiles());
+            final Factory<TaskStateChanges> outputFilesStateFactory = new Factory<TaskStateChanges>() {
+                @Override
+                public TaskStateChanges create() {
+                    return caching(OutputFilesStateChangeRule.create(task, lastExecution, thisExecution, outputFilesSnapshotter, outputFilesPrecheckBefore));
+                }
+            };
+            if (lastExecution != null && lastExecution.getOutputFilesHash() != null && lastExecution.getOutputFilesHash().equals(outputFilesPrecheckBefore.getHash())) {
+                outputFilesState = new LazyNoChangesTaskStateChanges(outputFilesStateFactory);
+            } else {
+                outputFilesState = outputFilesStateFactory.create();
+            }
+        } catch (UncheckedIOException e) {
+            throw new UncheckedIOException(String.format("Failed to capture snapshot of output files for task '%s' during up-to-date check.  See stacktrace for details.", task.getName()), e);
+        }
     }
 
     private TaskStateChanges caching(TaskStateChanges wrapped) {
@@ -89,10 +126,44 @@ public class TaskUpToDateState {
     }
 
     public FilesSnapshotSet getInputFilesSnapshot() {
-        return inputFilesSnapshot;
+        if (directInputFilesState == null) {
+            inputFilesState.snapshotBeforeTask();
+        }
+        return directInputFilesState.getInputFilesSnapshot().getSnapshot();
     }
 
     public DiscoveredTaskStateChanges getDiscoveredInputFilesChanges() {
         return discoveredInputFilesState;
+    }
+
+    private static class LazyNoChangesTaskStateChanges implements TaskStateChanges {
+        private final Factory<TaskStateChanges> stateChangesFactory;
+        TaskStateChanges delegate;
+
+        protected LazyNoChangesTaskStateChanges(Factory<TaskStateChanges> stateChangesFactory) {
+            this.stateChangesFactory = stateChangesFactory;
+        }
+
+        @Override
+        public void snapshotBeforeTask() {
+            getDelegate().snapshotBeforeTask();
+        }
+
+        private TaskStateChanges getDelegate() {
+            if (delegate == null) {
+                delegate = stateChangesFactory.create();
+            }
+            return delegate;
+        }
+
+        @Override
+        public void snapshotAfterTask() {
+            getDelegate().snapshotAfterTask();
+        }
+
+        @Override
+        public Iterator<TaskStateChange> iterator() {
+            return Iterators.emptyIterator();
+        }
     }
 }

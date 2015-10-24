@@ -16,7 +16,10 @@
 
 package org.gradle.api.internal.changedetection.state;
 
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.internal.cache.StringInterner;
 import org.gradle.cache.PersistentIndexedCache;
 import org.gradle.internal.id.IdGenerator;
@@ -67,7 +70,13 @@ public class OutputFilesCollectionSnapshotter implements FileCollectionSnapshott
         return new OutputFilesSnapshot(new HashMap<String, Long>(), snapshotter.emptySnapshot());
     }
 
-    public OutputFilesSnapshot snapshot(final FileCollection files) {
+    @Override
+    public OutputFilesSnapshot snapshot(final FileCollectionSnapshot.PreCheck preCheck) {
+        return new OutputFilesSnapshot(((OutputFilesSnapshotPreCheck) preCheck).getSnapshotDirIds(), snapshotter.snapshot(preCheck));
+    }
+
+    @Override
+    public FileCollectionSnapshot.PreCheck preCheck(FileCollection files) {
         final Map<String, Long> snapshotDirIds = new HashMap<String, Long>();
         final Set<File> theFiles = files.getFiles();
         cacheAccess.useCache("create dir snapshots", new Runnable() {
@@ -87,10 +96,50 @@ public class OutputFilesCollectionSnapshotter implements FileCollectionSnapshott
                     }
                     snapshotDirIds.put(absolutePath, dirId);
                 }
-
             }
         });
-        return new OutputFilesSnapshot(snapshotDirIds, snapshotter.snapshot(files));
+        return new OutputFilesSnapshotPreCheck(snapshotter.preCheck(files), snapshotDirIds);
+    }
+
+    private static class OutputFilesSnapshotPreCheck implements FileCollectionSnapshot.PreCheck {
+        private final FileCollectionSnapshot.PreCheck delegate;
+        private final Map<String, Long> snapshotDirIds;
+        private Integer hash;
+
+        OutputFilesSnapshotPreCheck(FileCollectionSnapshot.PreCheck delegate, Map<String, Long> snapshotDirIds) {
+            this.delegate = delegate;
+            this.snapshotDirIds = snapshotDirIds;
+        }
+
+        @Override
+        public FileCollection getFileCollection() {
+            return delegate.getFileCollection();
+        }
+
+        @Override
+        public Integer getHash() {
+            if (hash == null) {
+                Hasher hasher = Hashing.murmur3_32(delegate.getHash()).newHasher();
+                for (Map.Entry<String, Long> entry : snapshotDirIds.entrySet()) {
+                    hasher.putUnencodedChars(entry.getKey());
+                    if (entry.getValue() != null) {
+                        hasher.putLong(entry.getValue());
+                    }
+                    hasher.putByte((byte) '\n');
+                }
+                hash = hasher.hash().asInt();
+            }
+            return hash;
+        }
+
+        @Override
+        public List<FileVisitDetails> getFileVisitDetails() {
+            return delegate.getFileVisitDetails();
+        }
+
+        public Map<String, Long> getSnapshotDirIds() {
+            return snapshotDirIds;
+        }
     }
 
     static class OutputFilesSnapshot implements FileCollectionSnapshot {

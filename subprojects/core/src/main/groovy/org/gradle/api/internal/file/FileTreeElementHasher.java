@@ -26,12 +26,37 @@ import java.util.TreeSet;
 
 public class FileTreeElementHasher {
     private static final byte HASH_PATH_SEPARATOR = (byte) '/';
+    private static final byte HASH_FIELD_SEPARATOR = (byte) '\t';
     private static final byte HASH_RECORD_SEPARATOR = (byte) '\n';
 
-    public static final int calculateHashForFilePaths(Collection<FileTreeElement> allFileTreeElements) {
+    public static final int calculateHashForFileMetadata(Collection<? extends FileTreeElement> allFileTreeElements) {
         SortedSet<FileTreeElement> sortedFileTreeElement = asSortedSet(allFileTreeElements);
 
-        Hasher hasher = Hashing.adler32().newHasher();
+        Hasher hasher = createHasher();
+        for (FileTreeElement fileTreeElement : sortedFileTreeElement) {
+            for (String pathPart : fileTreeElement.getRelativePath().getSegments()) {
+                hasher.putUnencodedChars(pathPart);
+                hasher.putByte(HASH_PATH_SEPARATOR);
+            }
+            if (!fileTreeElement.isDirectory()) {
+                hasher.putByte(HASH_FIELD_SEPARATOR);
+                hasher.putLong(fileTreeElement.getSize());
+                hasher.putByte(HASH_FIELD_SEPARATOR);
+                hasher.putLong(fileTreeElement.getLastModified());
+            }
+            hasher.putByte(HASH_RECORD_SEPARATOR);
+        }
+        return hasher.hash().asInt();
+    }
+
+    private static Hasher createHasher() {
+        return Hashing.murmur3_32().newHasher();
+    }
+
+    public static final int calculateHashForFilePaths(Collection<? extends FileTreeElement> allFileTreeElements) {
+        SortedSet<FileTreeElement> sortedFileTreeElement = asSortedSet(allFileTreeElements);
+
+        Hasher hasher = createHasher();
         for (FileTreeElement fileTreeElement : sortedFileTreeElement) {
             for (String pathPart : fileTreeElement.getRelativePath().getSegments()) {
                 hasher.putUnencodedChars(pathPart);
@@ -42,7 +67,7 @@ public class FileTreeElementHasher {
         return hasher.hash().asInt();
     }
 
-    private static SortedSet<FileTreeElement> asSortedSet(Collection<FileTreeElement> allFileTreeElements) {
+    private static SortedSet<FileTreeElement> asSortedSet(Collection<? extends FileTreeElement> allFileTreeElements) {
         if (allFileTreeElements instanceof SortedSet) {
             return (SortedSet<FileTreeElement>) allFileTreeElements;
         }
