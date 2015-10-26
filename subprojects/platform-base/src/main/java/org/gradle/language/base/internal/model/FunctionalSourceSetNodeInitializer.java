@@ -27,6 +27,7 @@ import org.gradle.model.internal.core.*;
 import org.gradle.model.internal.core.rule.describe.ModelRuleDescriptor;
 import org.gradle.model.internal.type.ModelType;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,14 +40,19 @@ public class FunctionalSourceSetNodeInitializer implements NodeInitializer {
 
     @Override
     public List<? extends ModelReference<?>> getInputs() {
-        return Lists.<ModelReference<?>>newArrayList(ModelReference.of(ProjectSourceSet.class), ModelReference.of(LanguageRegistry.class));
+        return Lists.<ModelReference<?>>newArrayList(
+            ModelReference.of(ProjectSourceSet.class),
+            ModelReference.of(LanguageRegistry.class),
+            ModelReference.of("baseSourceSetDirectory", File.class)
+        );
     }
 
     @Override
     public void execute(MutableModelNode modelNode, List<ModelView<?>> inputs) {
         ProjectSourceSet projectSourceSet = (ProjectSourceSet) inputs.get(0).getInstance();
         LanguageRegistry languageRegistry = (LanguageRegistry) inputs.get(1).getInstance();
-        DefaultFunctionalSourceSet defaultFunctionalSourceSet = new DefaultFunctionalSourceSet(modelNode.getPath().getName(), instantiator, projectSourceSet, languageRegistry);
+        File baseDir = (File) inputs.get(2).getInstance();
+        DefaultFunctionalSourceSet defaultFunctionalSourceSet = new DefaultFunctionalSourceSet(modelNode.getPath().getName(), instantiator, projectSourceSet, languageRegistry, baseDir);
         modelNode.setPrivateData(DefaultFunctionalSourceSet.class, defaultFunctionalSourceSet);
     }
 

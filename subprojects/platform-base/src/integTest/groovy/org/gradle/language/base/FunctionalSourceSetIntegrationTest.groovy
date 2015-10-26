@@ -15,9 +15,10 @@
  */
 
 package org.gradle.language.base
-
 import org.gradle.api.reporting.model.ModelReportOutput
 import org.gradle.integtests.fixtures.AbstractIntegrationSpec
+
+import static org.gradle.util.TextUtil.normaliseFileSeparators
 
 class FunctionalSourceSetIntegrationTest extends AbstractIntegrationSpec {
 
@@ -210,6 +211,33 @@ class FunctionalSourceSetIntegrationTest extends AbstractIntegrationSpec {
         def modelNode = ModelReportOutput.from(output).modelNode
         modelNode.functionalSources.@nodeValue[0] == "source set 'functionalSources'"
         modelNode.sources.@nodeValue[0] == "[Java source 'functionalSources:myJavaSourceSet']"
+    }
+
+    def "a LSS is initialized with a default source set"() {
+        buildFile << """
+        ${registerJavaLanguage()}
+
+        model {
+            functionalSources(FunctionalSourceSet){
+                myJavaSourceSet(JavaSourceSet)
+            }
+        }
+
+        class Rules extends RuleSource {
+            @Mutate void printTask(ModelMap<Task> tasks, FunctionalSourceSet fss) {
+                tasks.create("verify") {
+                  doLast {
+                    assert fss.getByName("myJavaSourceSet").source.getSrcDirs()[0].path == '${normaliseFileSeparators(testDirectory.path + "/src/main/functionalSources/myJavaSourceSet")}'
+                  }
+              }
+            }
+
+        }
+        apply plugin: Rules
+        """
+
+        expect:
+        succeeds "verify"
     }
 
     private String registerJavaLanguage() {

@@ -45,6 +45,7 @@ import org.gradle.platform.base.internal.BinarySpecInternal;
 import org.gradle.platform.base.internal.ComponentSpecInternal;
 import org.gradle.util.DeprecationLogger;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -87,11 +88,11 @@ public abstract class BaseComponentSpec implements ComponentSpecInternal {
     private final MutableModelNode sources;
     private MutableModelNode modelNode;
 
-    public static <T extends BaseComponentSpec> T create(Class<T> type, ComponentSpecIdentifier identifier, MutableModelNode modelNode, ProjectSourceSet allSourceSets, Instantiator instantiator, LanguageRegistry languageRegistry) {
+    public static <T extends BaseComponentSpec> T create(Class<T> type, ComponentSpecIdentifier identifier, MutableModelNode modelNode, ProjectSourceSet allSourceSets, Instantiator instantiator, LanguageRegistry languageRegistry, File baseDir) {
         if (type.equals(BaseComponentSpec.class)) {
             throw new ModelInstantiationException("Cannot create instance of abstract class BaseComponentSpec.");
         }
-        FunctionalSourceSet mainSourceSet = instantiator.newInstance(DefaultFunctionalSourceSet.class, identifier.getName(), instantiator, allSourceSets, languageRegistry);
+        FunctionalSourceSet mainSourceSet = instantiator.newInstance(DefaultFunctionalSourceSet.class, identifier.getName(), instantiator, allSourceSets, languageRegistry, baseDir);
         nextComponentInfo.set(new ComponentInfo(identifier, modelNode, type.getSimpleName(), mainSourceSet, instantiator));
         try {
             try {

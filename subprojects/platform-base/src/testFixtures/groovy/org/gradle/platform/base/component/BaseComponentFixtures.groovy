@@ -27,11 +27,11 @@ import org.gradle.platform.base.ComponentSpecIdentifier
 
 class BaseComponentFixtures {
 
-    static <T extends BaseComponentSpec> T create(Class<T> type, ModelRegistryHelper modelRegistry, ComponentSpecIdentifier componentId, ProjectSourceSet allSourceSets, Instantiator instantiator) {
+    static <T extends BaseComponentSpec> T create(Class<T> type, ModelRegistryHelper modelRegistry, ComponentSpecIdentifier componentId, ProjectSourceSet allSourceSets, Instantiator instantiator, File baseDir = null) {
         try {
             modelRegistry.create(
                 ModelCreators.unmanagedInstanceOf(ModelReference.of(componentId.name, type), {
-                    BaseComponentSpec.create(type, componentId, it, allSourceSets, instantiator, new DefaultLanguageRegistry())
+                    BaseComponentSpec.create(type, componentId, it, allSourceSets, instantiator, new DefaultLanguageRegistry(), baseDir)
                 })
                     .descriptor(componentId.name)
                     .build()
