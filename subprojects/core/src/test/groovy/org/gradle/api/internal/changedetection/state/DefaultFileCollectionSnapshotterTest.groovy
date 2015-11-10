@@ -60,7 +60,7 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile noExist = tmpDir.file('file3')
 
         when:
-        def snapshot = snapshotter.snapshot(files(file, dir, noExist))
+        def snapshot = snapshotter.snapshot(snapshotter.preCheck(files(file, dir, noExist)))
 
         then:
         snapshot.files.files as List == [file]
@@ -72,8 +72,8 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile file2 = tmpDir.createFile('file2')
 
         when:
-        def snapshot = snapshotter.snapshot(files(file1))
-        snapshotter.snapshot(files(file1, file2)).iterateChangesSince(snapshot).next(listener)
+        def snapshot = snapshotter.snapshot(snapshotter.preCheck(files(file1)))
+        snapshotter.snapshot(snapshotter.preCheck(files(file1, file2))).iterateChangesSince(snapshot).next(listener)
 
         then:
         1 * listener.added(file2.path)
@@ -86,8 +86,8 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile file2 = tmpDir.createFile('file2')
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(files(file1, file2))
-        snapshotter.snapshot(files(file1)).iterateChangesSince(snapshot).next(listener)
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(files(file1, file2)))
+        snapshotter.snapshot(snapshotter.preCheck(files(file1))).iterateChangesSince(snapshot).next(listener)
 
         then:
         1 * listener.removed(file2.path)
@@ -99,8 +99,8 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile file = tmpDir.createFile('file')
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(files(file))
-        snapshotter.snapshot(files(file)).iterateChangesSince(snapshot).next(listener)
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(files(file)))
+        snapshotter.snapshot(snapshotter.preCheck(files(file))).iterateChangesSince(snapshot).next(listener)
 
         then:
         _ * listener.stopped >> false
@@ -115,10 +115,10 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         def fileCollection = files(root)
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(fileCollection)
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(fileCollection))
         file.delete()
         file.createDir()
-        snapshotter.snapshot(fileCollection).iterateChangesSince(snapshot).next(listener)
+        snapshotter.snapshot(snapshotter.preCheck(fileCollection)).iterateChangesSince(snapshot).next(listener)
 
         then:
         1 * listener.changed(file.path)
@@ -133,9 +133,9 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile file = tmpDir.createFile('file')
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(files(file)))
         file.write('new content')
-        snapshotter.snapshot(files(file)).iterateChangesSince(snapshot).next(listener)
+        snapshotter.snapshot(snapshotter.preCheck(files(file))).iterateChangesSince(snapshot).next(listener)
 
         then:
         1 * listener.changed(file.path)
@@ -150,9 +150,9 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile dir = tmpDir.createDir('dir')
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(files(dir))
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(files(dir)))
 
-        snapshotter.snapshot(files(dir)).iterateChangesSince(snapshot).next(listener)
+        snapshotter.snapshot(snapshotter.preCheck(files(dir))).iterateChangesSince(snapshot).next(listener)
 
         then:
         _ * listener.stopped >> false
@@ -166,10 +166,10 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile dir = root.createDir('dir')
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(fileCollection)
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(fileCollection))
         dir.deleteDir()
         dir.createFile()
-        snapshotter.snapshot(fileCollection).iterateChangesSince(snapshot).next(listener)
+        snapshotter.snapshot(snapshotter.preCheck(fileCollection)).iterateChangesSince(snapshot).next(listener)
 
         then:
         1 * listener.changed(dir.path)
@@ -179,8 +179,8 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile file = tmpDir.file('unknown')
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(files(file))
-        snapshotter.snapshot(files(file)).iterateChangesSince(snapshot).next(listener)
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(files(file)))
+        snapshotter.snapshot(snapshotter.preCheck(files(file))).iterateChangesSince(snapshot).next(listener)
 
         then:
         _ * listener.stopped >> false
@@ -194,9 +194,9 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile file = root.file('newfile')
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(fileCollection)
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(fileCollection))
         file.createFile()
-        snapshotter.snapshot(fileCollection).iterateChangesSince(snapshot).next(listener)
+        snapshotter.snapshot(snapshotter.preCheck(fileCollection)).iterateChangesSince(snapshot).next(listener)
 
         then:
         1 * listener.added(file.path)
@@ -208,9 +208,9 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile file = root.createFile('file')
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(fileCollection)
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(fileCollection))
         file.delete()
-        snapshotter.snapshot(fileCollection).iterateChangesSince(snapshot).next(listener)
+        snapshotter.snapshot(snapshotter.preCheck(fileCollection)).iterateChangesSince(snapshot).next(listener)
 
         then:
         1 * listener.removed(file.path)
@@ -221,8 +221,8 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         TestFile file2 = tmpDir.createFile('file')
 
         when:
-        FileCollectionSnapshot snapshot = snapshotter.snapshot(files(file1, file2))
-        snapshotter.snapshot(files(file1)).iterateChangesSince(snapshot).next(listener)
+        FileCollectionSnapshot snapshot = snapshotter.snapshot(snapshotter.preCheck(files(file1, file2)))
+        snapshotter.snapshot(snapshotter.preCheck(files(file1))).iterateChangesSince(snapshot).next(listener)
 
         then:
         _ * listener.stopped >> false
@@ -235,7 +235,7 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
 
         when:
         FileCollectionSnapshot snapshot = snapshotter.emptySnapshot()
-        FileCollectionSnapshot newSnapshot = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot newSnapshot = snapshotter.snapshot(snapshotter.preCheck(files(file)))
         newSnapshot.iterateChangesSince(snapshot).next(listener)
 
         then:
@@ -249,7 +249,7 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         ChangeListener<FileCollectionSnapshot.Merge> mergeListener = Mock(ChangeListener.class)
 
         FileCollectionSnapshot original = snapshotter.emptySnapshot()
-        FileCollectionSnapshot modified = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot modified = snapshotter.snapshot(snapshotter.preCheck(files(file)))
 
         when:
         FileCollectionSnapshot target = modified.changesSince(original).applyTo(snapshotter.emptySnapshot(), mergeListener)
@@ -269,7 +269,7 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
 
         ChangeListener<FileCollectionSnapshot.Merge> mergeListener = Mock(ChangeListener.class)
         FileCollectionSnapshot original = snapshotter.emptySnapshot()
-        FileCollectionSnapshot modified = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot modified = snapshotter.snapshot(snapshotter.preCheck(files(file)))
 
         when:
         FileCollectionSnapshot target = modified.changesSince(original).applyTo(snapshotter.emptySnapshot(), mergeListener)
@@ -284,9 +284,9 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
 
         ChangeListener<FileCollectionSnapshot.Merge> mergeListener = Mock(ChangeListener.class)
 
-        FileCollectionSnapshot original = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot original = snapshotter.snapshot(snapshotter.preCheck(files(file)))
         file.write('new content')
-        FileCollectionSnapshot modified = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot modified = snapshotter.snapshot(snapshotter.preCheck(files(file)))
 
         when:
         FileCollectionSnapshot target = modified.changesSince(original).applyTo(snapshotter.emptySnapshot(), mergeListener)
@@ -306,10 +306,10 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         ChangeListener<FileCollectionSnapshot.Merge> mergeListener = Mock(ChangeListener.class)
 
         when:
-        FileCollectionSnapshot original = snapshotter.snapshot(files(file))
-        FileCollectionSnapshot target = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot original = snapshotter.snapshot(snapshotter.preCheck(files(file)))
+        FileCollectionSnapshot target = snapshotter.snapshot(snapshotter.preCheck(files(file)))
         file.write('new content')
-        FileCollectionSnapshot modified = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot modified = snapshotter.snapshot(snapshotter.preCheck(files(file)))
 
         and:
         target = modified.changesSince(original).applyTo(target, mergeListener)
@@ -324,10 +324,10 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         ChangeListener<FileCollectionSnapshot.Merge> mergeListener = Mock(ChangeListener.class)
 
         when:
-        FileCollectionSnapshot original = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot original = snapshotter.snapshot(snapshotter.preCheck(files(file)))
         FileCollectionSnapshot modified = snapshotter.emptySnapshot()
 
-        FileCollectionSnapshot target = modified.changesSince(original).applyTo(snapshotter.snapshot(files(file)), mergeListener)
+        FileCollectionSnapshot target = modified.changesSince(original).applyTo(snapshotter.snapshot(snapshotter.preCheck(files(file))), mergeListener)
 
         then:
         1 * mergeListener.removed(!null)
@@ -344,9 +344,9 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         ChangeListener<FileCollectionSnapshot.Merge> mergeListener = Mock(ChangeListener.class)
 
         when:
-        FileCollectionSnapshot original = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot original = snapshotter.snapshot(snapshotter.preCheck(files(file)))
         FileCollectionSnapshot modified = snapshotter.emptySnapshot()
-        FileCollectionSnapshot target = modified.changesSince(original).applyTo(snapshotter.snapshot(files(file)), mergeListener)
+        FileCollectionSnapshot target = modified.changesSince(original).applyTo(snapshotter.snapshot(snapshotter.preCheck(files(file))), mergeListener)
 
         target.iterateChangesSince(original).next(listener)
 
@@ -359,8 +359,8 @@ public class DefaultFileCollectionSnapshotterTest extends Specification {
         ChangeListener<FileCollectionSnapshot.Merge> mergeListener = Mock(ChangeListener.class)
 
         when:
-        FileCollectionSnapshot original = snapshotter.snapshot(files(file))
-        FileCollectionSnapshot modified = snapshotter.snapshot(files(file))
+        FileCollectionSnapshot original = snapshotter.snapshot(snapshotter.preCheck(files(file)))
+        FileCollectionSnapshot modified = snapshotter.snapshot(snapshotter.preCheck(files(file)))
         FileCollectionSnapshot target = modified.changesSince(original).applyTo(snapshotter.emptySnapshot(), mergeListener)
 
         target.iterateChangesSince(snapshotter.emptySnapshot()).next(listener)

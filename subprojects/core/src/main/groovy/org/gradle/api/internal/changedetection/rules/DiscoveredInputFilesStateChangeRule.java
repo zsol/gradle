@@ -42,7 +42,7 @@ public class DiscoveredInputFilesStateChangeRule {
                 }
 
                 Iterables.addAll(discoveredFiles, previousExecution.getDiscoveredInputFilesSnapshot().getFiles());
-                final FileCollectionSnapshot discoveredFileSnapshot = inputFilesSnapshotter.snapshot(new SimpleFileCollection(discoveredFiles));
+                final FileCollectionSnapshot discoveredFileSnapshot = inputFilesSnapshotter.snapshot(inputFilesSnapshotter.preCheck(new SimpleFileCollection(discoveredFiles)));
 
                 return new AbstractIterator<TaskStateChange>() {
                     final FileCollectionSnapshot.ChangeIterator<String> changeIterator = discoveredFileSnapshot.iterateChangesSince(previousExecution.getDiscoveredInputFilesSnapshot());
@@ -65,7 +65,12 @@ public class DiscoveredInputFilesStateChangeRule {
             }
 
             public void snapshotAfterTask() {
-                currentExecution.setDiscoveredInputFilesSnapshot(inputFilesSnapshotter.snapshot(new SimpleFileCollection(discoveredFiles)));
+                currentExecution.setDiscoveredInputFilesSnapshot(inputFilesSnapshotter.snapshot(inputFilesSnapshotter.preCheck(new SimpleFileCollection(discoveredFiles))));
+            }
+
+            @Override
+            public void snapshotBeforeTask() {
+
             }
         };
     }

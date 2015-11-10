@@ -30,10 +30,20 @@ import java.util.Iterator;
  */
 class OutputFilesStateChangeRule {
 
-    public static TaskStateChanges create(final TaskInternal task, final TaskExecution previousExecution, final TaskExecution currentExecution, final FileCollectionSnapshotter outputFilesSnapshotter) {
-        final FileCollectionSnapshot outputFilesBefore = outputFilesSnapshotter.snapshot(task.getOutputs().getFiles());
-
+    public static TaskStateChanges create(final TaskInternal task, final TaskExecution previousExecution, final TaskExecution currentExecution, final FileCollectionSnapshotter outputFilesSnapshotter, final FileCollectionSnapshot.PreCheck outputFilesPrecheckBefore) {
         return new TaskStateChanges() {
+            FileCollectionSnapshot outputFilesBefore;
+
+            public void snapshotBeforeTask() {
+                getOutputFilesBefore();
+            }
+
+            private FileCollectionSnapshot getOutputFilesBefore() {
+                if (outputFilesBefore == null) {
+                    outputFilesBefore = outputFilesSnapshotter.snapshot(outputFilesPrecheckBefore);
+                }
+                return outputFilesBefore;
+            }
 
             public Iterator<TaskStateChange> iterator() {
                 if (previousExecution.getOutputFilesSnapshot() == null) {
@@ -41,13 +51,21 @@ class OutputFilesStateChangeRule {
                 }
 
                 return new AbstractIterator<TaskStateChange>() {
-                    final FileCollectionSnapshot.ChangeIterator<String> changeIterator = outputFilesBefore.iterateChangesSince(previousExecution.getOutputFilesSnapshot());
+                    FileCollectionSnapshot.ChangeIterator<String> changeIterator;
                     final ChangeListenerAdapter listenerAdapter = new ChangeListenerAdapter();
+                    int counter;
 
                     @Override
                     protected TaskStateChange computeNext() {
+                        if (changeIterator == null) {
+                            changeIterator = getOutputFilesBefore().iterateChangesSince(previousExecution.getOutputFilesSnapshot());
+                        }
                         if (changeIterator.next(listenerAdapter)) {
+                            counter++;
                             return listenerAdapter.lastChange;
+                        }
+                        if (counter == 0 && previousExecution != null && previousExecution.getOutputFilesHash() != null) {
+                            previousExecution.setOutputFilesHash(outputFilesPrecheckBefore.getHash());
                         }
                         return endOfData();
                     }
@@ -62,21 +80,23 @@ class OutputFilesStateChangeRule {
                     lastExecutionOutputFiles = previousExecution.getOutputFilesSnapshot();
                 }
                 FileCollectionSnapshot newOutputFiles = outputFilesBefore.changesSince(lastExecutionOutputFiles).applyTo(
-                        lastExecutionOutputFiles, new ChangeListener<FileCollectionSnapshot.Merge>() {
-                            public void added(FileCollectionSnapshot.Merge element) {
-                                // Ignore added files
-                                element.ignore();
-                            }
+                    lastExecutionOutputFiles, new ChangeListener<FileCollectionSnapshot.Merge>() {
+                        public void added(FileCollectionSnapshot.Merge element) {
+                            // Ignore added files
+                            element.ignore();
+                        }
 
-                            public void removed(FileCollectionSnapshot.Merge element) {
-                                // Discard any files removed since the task was last executed
-                            }
+                        public void removed(FileCollectionSnapshot.Merge element) {
+                            // Discard any files removed since the task was last executed
+                        }
 
-                            public void changed(FileCollectionSnapshot.Merge element) {
-                                // Update any files which were change since the task was last executed
-                            }
-                        });
-                FileCollectionSnapshot outputFilesAfter = outputFilesSnapshotter.snapshot(task.getOutputs().getFiles());
+                        public void changed(FileCollectionSnapshot.Merge element) {
+                            // Update any files which were change since the task was last executed
+                        }
+                    });
+                FileCollectionSnapshot.PreCheck outputFilesPrecheckAfter = outputFilesSnapshotter.preCheck(task.getOutputs().getFiles());
+                currentExecution.setOutputFilesHash(outputFilesPrecheckAfter.getHash());
+                FileCollectionSnapshot outputFilesAfter = outputFilesSnapshotter.snapshot(outputFilesPrecheckAfter);
                 currentExecution.setOutputFilesSnapshot(outputFilesAfter.changesSince(outputFilesBefore).applyTo(newOutputFiles));
             }
         };

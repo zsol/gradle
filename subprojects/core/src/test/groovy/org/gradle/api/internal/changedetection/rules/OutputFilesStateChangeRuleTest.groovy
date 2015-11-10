@@ -28,6 +28,8 @@ import spock.lang.Specification;
 public class OutputFilesStateChangeRuleTest extends Specification {
     def outputSnapshot = Mock(FileCollectionSnapshot)
     def previousOutputSnapshot = Mock(FileCollectionSnapshot)
+    def outputSnapshotPreCheck = Mock(FileCollectionSnapshot.PreCheck)
+
 
     TaskStateChanges createStateChanges() {
         def taskOutputs = Stub(TaskOutputsInternal) {
@@ -43,7 +45,7 @@ public class OutputFilesStateChangeRuleTest extends Specification {
         def previousExecution = Stub(TaskExecution) {
             getOutputFilesSnapshot() >> previousOutputSnapshot
         }
-        return OutputFilesStateChangeRule.create(task, previousExecution, Mock(TaskExecution), snapshotter)
+        return OutputFilesStateChangeRule.create(task, previousExecution, Mock(TaskExecution), snapshotter, outputSnapshotPreCheck)
     }
 
     def "emits change for no previous output snapshot"() {

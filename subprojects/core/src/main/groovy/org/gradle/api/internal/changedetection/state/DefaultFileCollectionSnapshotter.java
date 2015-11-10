@@ -21,6 +21,7 @@ import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.internal.cache.StringInterner;
 import org.gradle.api.internal.file.CachingFileVisitDetails;
+import org.gradle.api.internal.file.FileTreeElementHasher;
 import org.gradle.api.internal.file.FileTreeInternal;
 import org.gradle.api.internal.file.collections.*;
 import org.gradle.internal.serialize.SerializerRegistry;
@@ -32,6 +33,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 public class DefaultFileCollectionSnapshotter implements FileCollectionSnapshotter {
+
     private final FileTreeElementSnapshotter snapshotter;
     private TaskArtifactStateCacheAccess cacheAccess;
     private final StringInterner stringInterner;
@@ -50,9 +52,43 @@ public class DefaultFileCollectionSnapshotter implements FileCollectionSnapshott
         return new FileCollectionSnapshotImpl(new HashMap<String, IncrementalFileSnapshot>());
     }
 
-    public FileCollectionSnapshot snapshot(final FileCollection input) {
-        final List<FileVisitDetails> allFileVisitDetails = visitFiles(input);
+    @Override
+    public FileCollectionSnapshot snapshot(FileCollectionSnapshot.PreCheck preCheck) {
+        return snapshot(preCheck.getFileVisitDetails());
+    }
 
+    @Override
+    public FileCollectionSnapshot.PreCheck preCheck(final FileCollection files) {
+        final List<FileVisitDetails> allFileVisitDetails = visitFiles(files);
+
+        return new FileCollectionSnapshot.PreCheck() {
+            Integer hash;
+
+            @Override
+            public FileCollection getFileCollection() {
+                return files;
+            }
+
+            @Override
+            public Integer getHash() {
+                if (hash == null) {
+                    hash = calculatePreCheckHash(allFileVisitDetails);
+                }
+                return hash;
+            }
+
+            @Override
+            public List<FileVisitDetails> getFileVisitDetails() {
+                return allFileVisitDetails;
+            }
+        };
+    }
+
+    private Integer calculatePreCheckHash(List<FileVisitDetails> allFileVisitDetails) {
+        return FileTreeElementHasher.calculateHashForFileMetadata(allFileVisitDetails);
+    }
+
+    private FileCollectionSnapshot snapshot(final List<FileVisitDetails> allFileVisitDetails) {
         if (allFileVisitDetails.isEmpty()) {
             return new FileCollectionSnapshotImpl(Collections.<String, IncrementalFileSnapshot>emptyMap());
         }
