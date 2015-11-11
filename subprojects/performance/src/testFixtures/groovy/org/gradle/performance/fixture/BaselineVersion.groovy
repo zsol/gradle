@@ -28,6 +28,7 @@ class BaselineVersion implements VersionResults {
     final MeasuredOperationList results = new MeasuredOperationList()
     Amount<Duration> maxExecutionTimeRegression = Duration.millis(0)
     Amount<DataAmount> maxMemoryRegression = DataAmount.bytes(0)
+    boolean addStdDevToMaxRegression
 
     BaselineVersion(String version) {
         this.version = version
@@ -76,10 +77,30 @@ class BaselineVersion implements VersionResults {
     }
 
     boolean usesLessMemoryThan(MeasuredOperationList current) {
-        current.totalMemoryUsed.average - results.totalMemoryUsed.average > maxMemoryRegression
+        current.totalMemoryUsed.average - results.totalMemoryUsed.average > calculateMaxMemoryRegression(current)
+    }
+
+    private Amount<DataAmount> calculateMaxMemoryRegression(MeasuredOperationList current) {
+        if (!addStdDevToMaxRegression) {
+            return maxMemoryRegression
+        } else {
+            // increase the limit of the regression by adding the average of standard deviations to it
+            Amount<DataAmount> averageOfStandardDeviations = (current.totalMemoryUsed.stddev + results.totalMemoryUsed.stddev) / 2
+            return maxMemoryRegression + averageOfStandardDeviations
+        }
     }
 
     boolean fasterThan(MeasuredOperationList current) {
-        current.totalTime.average - results.totalTime.average > maxExecutionTimeRegression
+        current.totalTime.average - results.totalTime.average > calculateMaxTimeRegression(current)
+    }
+
+    private Amount<Duration> calculateMaxTimeRegression(MeasuredOperationList current) {
+        if (!addStdDevToMaxRegression) {
+            return maxExecutionTimeRegression
+        } else {
+            // increase the limit of the regression by adding the average of standard deviations to it
+            Amount<Duration> averageOfStandardDeviations = (current.totalTime.stddev + results.totalTime.stddev) / 2
+            return maxExecutionTimeRegression + averageOfStandardDeviations
+        }
     }
 }
