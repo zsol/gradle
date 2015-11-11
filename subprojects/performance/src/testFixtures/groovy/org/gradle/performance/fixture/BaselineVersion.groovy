@@ -28,7 +28,7 @@ class BaselineVersion implements VersionResults {
     final MeasuredOperationList results = new MeasuredOperationList()
     Amount<Duration> maxExecutionTimeRegression = Duration.millis(0)
     Amount<DataAmount> maxMemoryRegression = DataAmount.bytes(0)
-    boolean addStdDevToMaxRegression
+    int maxLimitIncreasePercentage = 10
 
     BaselineVersion(String version) {
         this.version = version
@@ -81,12 +81,17 @@ class BaselineVersion implements VersionResults {
     }
 
     private Amount<DataAmount> calculateMaxMemoryRegression(MeasuredOperationList current) {
-        if (!addStdDevToMaxRegression) {
+        if (maxLimitIncreasePercentage <= 0) {
             return maxMemoryRegression
         } else {
             // increase the limit of the regression by adding the average of standard deviations to it
             Amount<DataAmount> averageOfStandardDeviations = (current.totalMemoryUsed.stddev + results.totalMemoryUsed.stddev) / 2
-            return maxMemoryRegression + averageOfStandardDeviations
+            Amount<DataAmount> maxLimitIncrease = results.totalMemoryUsed.average * (maxLimitIncreasePercentage / 100)
+            if (averageOfStandardDeviations > maxLimitIncrease) {
+                return maxMemoryRegression + maxLimitIncrease
+            } else {
+                return maxMemoryRegression + averageOfStandardDeviations
+            }
         }
     }
 
@@ -95,12 +100,17 @@ class BaselineVersion implements VersionResults {
     }
 
     private Amount<Duration> calculateMaxTimeRegression(MeasuredOperationList current) {
-        if (!addStdDevToMaxRegression) {
+        if (maxLimitIncreasePercentage <= 0) {
             return maxExecutionTimeRegression
         } else {
             // increase the limit of the regression by adding the average of standard deviations to it
             Amount<Duration> averageOfStandardDeviations = (current.totalTime.stddev + results.totalTime.stddev) / 2
-            return maxExecutionTimeRegression + averageOfStandardDeviations
+            Amount<DataAmount> maxLimitIncrease = results.totalTime.average * (maxLimitIncreasePercentage / 100)
+            if (averageOfStandardDeviations > maxLimitIncrease) {
+                return maxExecutionTimeRegression + maxLimitIncrease
+            } else {
+                return maxExecutionTimeRegression + averageOfStandardDeviations
+            }
         }
     }
 }
