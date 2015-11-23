@@ -40,7 +40,8 @@ public class DefaultJavaSourceSet extends AbstractLanguageSourceSet implements J
 
     @Override
     public DependencySpecContainer getDependencies() {
-        return new DefaultDependencySpecContainer();
+        // TODO:RBO: document what's going on here
+        return new DefaultDependencySpecContainer("");
     }
 
     public TaskDependency getBuildDependencies() {

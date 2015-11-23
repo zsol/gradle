@@ -17,27 +17,15 @@
 package org.gradle.platform.base;
 
 import org.gradle.api.Incubating;
-import org.gradle.api.Nullable;
 
 /**
- * A dependency onto a library published by a project.
+ * Creates {@link DependencySpecContainer} instances.
  */
 @Incubating
-public interface ProjectDependencySpec extends DependencySpec {
-
+public interface DependencySpecContainerFactory {
     /**
-     * Returns the project path of the project this dependency refers to.
-     *
-     * @return the project path
+     * Creates a new {@link DependencySpecContainer} that resolves unqualified
+     * library references against the owning project.
      */
-    String getProjectPath();
-
-    /**
-     * Returns the name of the library this dependency refers to. If null, it should be assumed that the project
-     * defines a single library.
-     *
-     * @return the library name
-     */
-    @Nullable
-    String getLibraryName();
+    DependencySpecContainer createDependencySpecContainer();
 }

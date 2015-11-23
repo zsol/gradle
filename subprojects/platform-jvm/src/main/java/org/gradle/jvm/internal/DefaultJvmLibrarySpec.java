@@ -21,9 +21,9 @@ import org.gradle.jvm.JvmApiSpec;
 import org.gradle.jvm.JvmByteCode;
 import org.gradle.jvm.JvmResources;
 import org.gradle.platform.base.DependencySpecContainer;
+import org.gradle.platform.base.DependencySpecContainerFactory;
 import org.gradle.platform.base.TransformationFileType;
 import org.gradle.platform.base.component.BaseComponentSpec;
-import org.gradle.platform.base.internal.DefaultDependencySpecContainer;
 import org.gradle.platform.base.internal.DefaultPlatformRequirement;
 import org.gradle.platform.base.internal.PlatformRequirement;
 
@@ -35,12 +35,14 @@ import java.util.Set;
 public class DefaultJvmLibrarySpec extends BaseComponentSpec implements JvmLibrarySpecInternal {
     private final Set<Class<? extends TransformationFileType>> languageOutputs = new HashSet<Class<? extends TransformationFileType>>();
     private final List<PlatformRequirement> targetPlatforms = Lists.newArrayList();
-    private final JvmApiSpec apiSpec = new DefaultJvmApiSpec();
-    private final DependencySpecContainer dependencies = new DefaultDependencySpecContainer();
+    private final JvmApiSpec apiSpec;
+    private final DependencySpecContainer dependencies;
 
-    public DefaultJvmLibrarySpec() {
-        this.languageOutputs.add(JvmResources.class);
-        this.languageOutputs.add(JvmByteCode.class);
+    public DefaultJvmLibrarySpec(DependencySpecContainerFactory dependencySpecContainerFactory) {
+        dependencies = dependencySpecContainerFactory.createDependencySpecContainer();
+        apiSpec = new DefaultJvmApiSpec(dependencySpecContainerFactory.createDependencySpecContainer());
+        languageOutputs.add(JvmResources.class);
+        languageOutputs.add(JvmByteCode.class);
     }
 
     @Override

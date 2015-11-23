@@ -23,7 +23,23 @@ import spock.lang.Unroll
 
 class DefaultDependencySpecContainerTest extends Specification {
 
-    @Subject container = new DefaultDependencySpecContainer()
+    @Subject container = new DefaultDependencySpecContainer('default-project')
+
+    def "sets default project"() {
+        when:
+        container.library("core")
+
+        then:
+        container.dependencies*.displayName == ["project 'default-project' library 'core'"]
+    }
+
+    def "lets default project be overriden"() {
+        when:
+        container.project("core")
+
+        then:
+        container.dependencies*.displayName == ["project 'core'"]
+    }
 
     def "can build module dependency spec starting from either `group` or `module`"() {
         when:

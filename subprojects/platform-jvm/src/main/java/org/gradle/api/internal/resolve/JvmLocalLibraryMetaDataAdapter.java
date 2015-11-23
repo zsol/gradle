@@ -29,11 +29,11 @@ import static org.gradle.language.base.internal.model.DefaultLibraryLocalCompone
 public class JvmLocalLibraryMetaDataAdapter implements LocalLibraryMetaDataAdapter {
 
     @Override
-    public DefaultLibraryLocalComponentMetaData createLocalComponentMetaData(BinarySpec selectedBinary, String projectPath) {
+    public DefaultLibraryLocalComponentMetaData createLocalComponentMetaData(BinarySpec selectedBinary) {
         JarBinarySpecInternal jarBinarySpec = (JarBinarySpecInternal) selectedBinary;
         DefaultTaskDependency buildDependencies = new DefaultTaskDependency();
         buildDependencies.add(jarBinarySpec.getApiJar());
-        DefaultLibraryLocalComponentMetaData metadata = newDefaultLibraryLocalComponentMetadata(jarBinarySpec.getId(), buildDependencies, jarBinarySpec.getApiDependencies(), projectPath);
+        DefaultLibraryLocalComponentMetaData metadata = newDefaultLibraryLocalComponentMetadata(jarBinarySpec.getId(), buildDependencies, jarBinarySpec.getApiDependencies());
         LibraryPublishArtifact jarBinary = new LibraryPublishArtifact("jar", jarBinarySpec.getApiJar().getFile());
         metadata.addArtifacts(CONFIGURATION_API, Collections.singleton(jarBinary));
         return metadata;

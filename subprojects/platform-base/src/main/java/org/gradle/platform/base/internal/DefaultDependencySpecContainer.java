@@ -29,6 +29,14 @@ import static java.util.Collections.emptySet;
 public class DefaultDependencySpecContainer implements DependencySpecContainer {
 
     private final List<DependencySpecBuilder> builders = new LinkedList<DependencySpecBuilder>();
+    private final String defaultProject;
+
+    public DefaultDependencySpecContainer(String defaultProject) {
+        if (defaultProject == null) {
+            throw new IllegalArgumentException("defaultProject");
+        }
+        this.defaultProject = defaultProject;
+    }
 
     @Override
     public ProjectDependencySpecBuilder project(String path) {
@@ -37,7 +45,8 @@ public class DefaultDependencySpecContainer implements DependencySpecContainer {
 
     @Override
     public ProjectDependencySpecBuilder library(String name) {
-        return projectDependency().library(name);
+        ensureLibraryNotModule(name);
+        return projectDependency().library(name).project(defaultProject);
     }
 
     @Override
@@ -76,6 +85,13 @@ public class DefaultDependencySpecContainer implements DependencySpecContainer {
     private <T extends DependencySpecBuilder> T add(T builder) {
         builders.add(builder);
         return builder;
+    }
+
+    private void ensureLibraryNotModule(String name) {
+        if (name != null && name.contains(":")) {
+            throw new IllegalArgumentException(
+                String.format("`%s' is not a valid library name. Did you mean to refer to a module instead?", name));
+        }
     }
 
     private ModuleDependencySpecBuilder moduleDependencyFromModuleId(String moduleId) {

@@ -38,7 +38,6 @@ import org.gradle.platform.base.ProjectDependencySpec;
 
 import java.util.Collections;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static org.gradle.internal.component.local.model.DefaultLibraryBinaryIdentifier.CONFIGURATION_API;
 
@@ -47,9 +46,9 @@ public class DefaultLibraryLocalComponentMetaData extends DefaultLocalComponentM
     private static final ExcludeRule[] EXCLUDE_RULES = new ExcludeRule[0];
     private static final String CONFIGURATION_COMPILE = "compile";
 
-    public static DefaultLibraryLocalComponentMetaData newDefaultLibraryLocalComponentMetadata(LibraryBinaryIdentifier componentId, TaskDependency buildDependencies, Iterable<DependencySpec> dependencies, String defaultProject) {
+    public static DefaultLibraryLocalComponentMetaData newDefaultLibraryLocalComponentMetadata(LibraryBinaryIdentifier componentId, TaskDependency buildDependencies, Iterable<DependencySpec> dependencies) {
         DefaultLibraryLocalComponentMetaData metadata = newDefaultLibraryLocalComponentMetadata(componentId, buildDependencies);
-        metadata.addDependencies(dependencies, defaultProject);
+        metadata.addDependencies(dependencies);
         return metadata;
     }
 
@@ -74,16 +73,16 @@ public class DefaultLibraryLocalComponentMetaData extends DefaultLocalComponentM
         super(id, componentIdentifier, Project.DEFAULT_STATUS);
     }
 
-    private void addDependencies(Iterable<DependencySpec> dependencies, String projectPath) {
+    private void addDependencies(Iterable<DependencySpec> dependencies) {
         for (DependencySpec dependency : dependencies) {
-            addDependency(dependency, projectPath);
+            addDependency(dependency);
         }
     }
 
-    private void addDependency(DependencySpec dependency, String defaultProject) {
+    private void addDependency(DependencySpec dependency) {
         DependencyMetaData metadata = dependency instanceof ModuleDependencySpec
             ? moduleDependencyMetadata((ModuleDependencySpec) dependency)
-            : projectDependencyMetadata((ProjectDependencySpec) dependency, defaultProject);
+            : projectDependencyMetadata((ProjectDependencySpec) dependency);
         addDependency(metadata);
     }
 
@@ -95,16 +94,12 @@ public class DefaultLibraryLocalComponentMetaData extends DefaultLocalComponentM
         return dependencyMetadataFor(selector, requested, CONFIGURATION_COMPILE);
     }
 
-    // TODO:DAZ:RBO: projectDependency should be transformed based on defaultProject (and other context) elsewhere.
-    private DependencyMetaData projectDependencyMetadata(ProjectDependencySpec projectDependency, String defaultProject) {
+    private DependencyMetaData projectDependencyMetadata(ProjectDependencySpec projectDependency) {
         String projectPath = projectDependency.getProjectPath();
-        if (isNullOrEmpty(projectPath)) {
-            projectPath = defaultProject;
-        }
         String libraryName = projectDependency.getLibraryName();
         // currently we use "null" as variant value, because there's only one variant: API
         ComponentSelector selector = new DefaultLibraryComponentSelector(projectPath, libraryName);
-        DefaultModuleVersionSelector requested = new DefaultModuleVersionSelector(nullToEmpty(projectPath), nullToEmpty(libraryName), getId().getVersion());
+        DefaultModuleVersionSelector requested = new DefaultModuleVersionSelector(projectPath, nullToEmpty(libraryName), getId().getVersion());
         return dependencyMetadataFor(selector, requested, CONFIGURATION_API);
     }
 

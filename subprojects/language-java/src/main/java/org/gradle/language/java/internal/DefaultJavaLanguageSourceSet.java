@@ -20,11 +20,15 @@ import org.gradle.language.base.sources.BaseLanguageSourceSet;
 import org.gradle.language.java.JavaSourceSet;
 import org.gradle.language.jvm.internal.EmptyClasspath;
 import org.gradle.platform.base.DependencySpecContainer;
-import org.gradle.platform.base.internal.DefaultDependencySpecContainer;
+import org.gradle.platform.base.DependencySpecContainerFactory;
 
 public class DefaultJavaLanguageSourceSet extends BaseLanguageSourceSet implements JavaSourceSet {
     private final Classpath emptyClasspath = new EmptyClasspath();
-    private final DefaultDependencySpecContainer dependencies = new DefaultDependencySpecContainer();
+    private final DependencySpecContainer dependencies;
+
+    public DefaultJavaLanguageSourceSet(DependencySpecContainerFactory dependencySpecContainerFactory) {
+        dependencies = dependencySpecContainerFactory.createDependencySpecContainer();
+    }
 
     @Override
     protected String getTypeName() {

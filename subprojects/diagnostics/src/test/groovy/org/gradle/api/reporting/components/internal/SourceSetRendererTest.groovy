@@ -103,7 +103,7 @@ srcDir: src/folder2
     }
 
     def "shows dependencies"() {
-        DependencySpecContainer dsc = new DefaultDependencySpecContainer()
+        DependencySpecContainer dsc = new DefaultDependencySpecContainer("default-project")
         dsc.project("a-project")
         dsc.library("a-library")
         dsc.project("some-project").library("some-library")
@@ -126,7 +126,7 @@ srcDir: src/folder1
 srcDir: src/folder2
 dependencies:
     project 'a-project'
-    library 'a-library'
+    project 'default-project' library 'a-library'
     project 'some-project' library 'some-library'
 """)
     }

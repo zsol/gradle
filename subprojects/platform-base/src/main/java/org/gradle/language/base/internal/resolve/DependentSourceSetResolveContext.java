@@ -62,7 +62,7 @@ public class DependentSourceSetResolveContext implements ResolveContext {
 
     @Override
     public ComponentResolveMetaData toRootComponentMetaData() {
-        return newDefaultLibraryLocalComponentMetadata(libraryBinaryIdentifier, sourceSet.getBuildDependencies(), dependencies, libraryBinaryIdentifier.getProjectPath());
+        return newDefaultLibraryLocalComponentMetadata(libraryBinaryIdentifier, sourceSet.getBuildDependencies(), dependencies);
     }
 
 }

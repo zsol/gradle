@@ -20,7 +20,6 @@ import groovy.lang.Closure;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.jvm.JvmApiSpec;
 import org.gradle.platform.base.DependencySpecContainer;
-import org.gradle.platform.base.internal.DefaultDependencySpecContainer;
 import org.gradle.util.ConfigureUtil;
 
 import java.util.HashSet;
@@ -31,7 +30,11 @@ import static java.lang.String.format;
 public class DefaultJvmApiSpec implements JvmApiSpec {
 
     private final Set<String> exports = new HashSet<String>();
-    private final DefaultDependencySpecContainer dependencies = new DefaultDependencySpecContainer();
+    private final DependencySpecContainer dependencies;
+
+    public DefaultJvmApiSpec(DependencySpecContainer dependencies) {
+        this.dependencies = dependencies;
+    }
 
     @Override
     public void exports(String value) {

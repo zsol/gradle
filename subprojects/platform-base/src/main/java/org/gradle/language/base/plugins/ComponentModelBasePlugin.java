@@ -186,5 +186,15 @@ public class ComponentModelBasePlugin implements Plugin<ProjectInternal> {
                 }
             });
         }
+
+        @Service
+        DependencySpecContainerFactory dependencySpecContainerFactory(final ProjectIdentifier project) {
+            return new DependencySpecContainerFactory() {
+                @Override
+                public DependencySpecContainer createDependencySpecContainer() {
+                    return new DefaultDependencySpecContainer(project.getPath());
+                }
+            };
+        }
     }
 }

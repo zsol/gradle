@@ -32,7 +32,7 @@ public class DefaultProjectDependencySpec implements ProjectDependencySpec {
     private final String libraryName;
 
     public DefaultProjectDependencySpec(String libraryName, String projectPath) {
-        if (libraryName == null && projectPath == null) {
+        if (projectPath == null) {
             throw new IllegalArgumentException("A project dependency spec must have at least one of project or library name not null");
         }
         this.libraryName = libraryName;
@@ -53,9 +53,7 @@ public class DefaultProjectDependencySpec implements ProjectDependencySpec {
     @Override
     public String getDisplayName() {
         List<String> parts = newArrayList();
-        if (getProjectPath() != null) {
-            parts.add("project '" + getProjectPath() + "'");
-        }
+        parts.add("project '" + getProjectPath() + "'");
         if (getLibraryName() != null) {
             parts.add("library '" + getLibraryName() + "'");
         }
@@ -80,15 +78,7 @@ public class DefaultProjectDependencySpec implements ProjectDependencySpec {
 
         @Override
         public DependencySpec build() {
-            validate();
             return new DefaultProjectDependencySpec(libraryName, projectPath);
-        }
-
-        private void validate() {
-            if (projectPath == null && libraryName != null && libraryName.contains(":")) {
-                throw new IllegalArgumentException(
-                    String.format("`%s' is not a valid library name. Did you mean to refer to a module instead?", libraryName));
-            }
         }
     }
 
