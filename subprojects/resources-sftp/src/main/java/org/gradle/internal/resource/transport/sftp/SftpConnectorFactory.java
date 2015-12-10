@@ -19,6 +19,7 @@ package org.gradle.internal.resource.transport.sftp;
 import org.gradle.api.artifacts.repositories.PasswordCredentials;
 import org.gradle.authentication.Authentication;
 import org.gradle.internal.authentication.AllSchemesAuthentication;
+import org.gradle.internal.credentials.AuthenticationProtocol;
 import org.gradle.internal.resource.connector.ResourceConnectorFactory;
 import org.gradle.internal.resource.connector.ResourceConnectorSpecification;
 import org.gradle.internal.resource.transfer.DefaultExternalResourceConnector;
@@ -54,5 +55,10 @@ public class SftpConnectorFactory implements ResourceConnectorFactory {
         SftpResourceLister lister = new SftpResourceLister(sftpClientFactory, passwordCredentials);
         SftpResourceUploader uploader = new SftpResourceUploader(sftpClientFactory, passwordCredentials);
         return new DefaultExternalResourceConnector(accessor, lister, uploader);
+    }
+
+    @Override
+    public Iterable<? extends AuthenticationProtocol> getAuthenticationProtocols() {
+        return null;
     }
 }

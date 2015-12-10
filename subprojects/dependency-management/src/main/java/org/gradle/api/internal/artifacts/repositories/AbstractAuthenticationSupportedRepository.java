@@ -15,27 +15,32 @@
  */
 package org.gradle.api.internal.artifacts.repositories;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.repositories.AuthenticationContainer;
 import org.gradle.api.artifacts.repositories.PasswordCredentials;
-import org.gradle.authentication.Authentication;
 import org.gradle.api.credentials.AwsCredentials;
 import org.gradle.api.credentials.Credentials;
-import org.gradle.internal.authentication.AllSchemesAuthentication;
-import org.gradle.internal.authentication.AuthenticationInternal;
+import org.gradle.api.credentials.CredentialsProvider;
+import org.gradle.authentication.Authentication;
 import org.gradle.internal.Cast;
 import org.gradle.internal.artifacts.repositories.AuthenticationSupportedInternal;
+import org.gradle.internal.authentication.AllSchemesAuthentication;
+import org.gradle.internal.authentication.AuthenticationInternal;
 import org.gradle.internal.credentials.DefaultAwsCredentials;
 import org.gradle.internal.reflect.Instantiator;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public abstract class AbstractAuthenticationSupportedRepository extends AbstractArtifactRepository implements AuthenticationSupportedInternal {
 
     private Credentials credentials;
     private final Instantiator instantiator;
     private AuthenticationContainer authenticationContainer;
+    private final List<Class<? extends CredentialsProvider>> credentialsProviders = Lists.newArrayList();
 
     AbstractAuthenticationSupportedRepository(Instantiator instantiator, AuthenticationContainer authenticationContainer) {
         this.instantiator = instantiator;
@@ -78,6 +83,9 @@ public abstract class AbstractAuthenticationSupportedRepository extends Abstract
     private <T extends Credentials> T setCredentials(Class<T> clazz) {
         T t = newCredentials(clazz);
         credentials = t;
+
+
+
         return t;
     }
 
@@ -109,10 +117,20 @@ public abstract class AbstractAuthenticationSupportedRepository extends Abstract
         }
     }
 
+    @Override
+    public <T extends CredentialsProvider> void credentials(Class<T> credentialsProvider) {
+        this.credentialsProviders.add(credentialsProvider);
+    }
+
+    @Override
+    public Iterable<Class<? extends CredentialsProvider>> getCredentialsProviders() {
+        return ImmutableList.copyOf(this.credentialsProviders);
+    }
+
     private void populateAuthenticationCredentials() {
         // TODO: This will have to be changed when we support setting credentials directly on the authentication
         for (Authentication authentication : authenticationContainer) {
-            ((AuthenticationInternal)authentication).setCredentials(getConfiguredCredentials());
+            ((AuthenticationInternal) authentication).setCredentials(getConfiguredCredentials());
         }
     }
 

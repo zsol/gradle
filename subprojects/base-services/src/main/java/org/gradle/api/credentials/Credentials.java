@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-/**
- * Classes related to transport authentication protocols via AWS s3.
- *
- * @since 2.9
- */
-@Incubating
-package org.gradle.authentication.aws;
+package org.gradle.api.credentials;
 
 import org.gradle.api.Incubating;
+import org.gradle.api.NonExtensible;
+
+/**
+ * Base interface for credentials used for different authentication purposes.
+ * */
+@Incubating
+@NonExtensible
+public interface Credentials {
+}

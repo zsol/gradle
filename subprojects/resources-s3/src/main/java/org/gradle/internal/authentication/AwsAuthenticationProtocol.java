@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package org.gradle.internal.resource.connector;
+package org.gradle.internal.authentication;
 
-import org.gradle.authentication.Authentication;
+import com.google.common.collect.ImmutableSet;
+import org.gradle.api.credentials.Credentials;
+import org.gradle.credentials.AwsSessionCredentials;
 import org.gradle.internal.credentials.AuthenticationProtocol;
-import org.gradle.internal.resource.transfer.ExternalResourceConnector;
+import org.gradle.internal.credentials.DefaultAwsCredentials;
 
-import java.util.Set;
-
-public interface ResourceConnectorFactory {
-    Set<String> getSupportedProtocols();
-
-    Set<Class<? extends Authentication>> getSupportedAuthentication();
-
-    ExternalResourceConnector createResourceConnector(ResourceConnectorSpecification connectionDetails);
-
-    Iterable<? extends AuthenticationProtocol> getAuthenticationProtocols();
+public class AwsAuthenticationProtocol extends AuthenticationProtocol {
+    @Override
+    public Iterable<Class<? extends Credentials>> supportedCredentialTypes() {
+        return ImmutableSet.of(DefaultAwsCredentials.class, AwsSessionCredentials.class);
+    }
 }

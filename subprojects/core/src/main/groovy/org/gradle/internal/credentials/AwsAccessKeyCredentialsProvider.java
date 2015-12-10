@@ -14,17 +14,9 @@
  * limitations under the License.
  */
 
-package org.gradle.authentication.aws;
+package org.gradle.internal.credentials;
 
-import org.gradle.api.Incubating;
-import org.gradle.authentication.Authentication;
+import org.gradle.api.credentials.CredentialsProvider;
 
-
-/**
- * Authentication scheme for authenticating with AWSs EC2 Instance MetaData
- * For more information see: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
- */
-@Incubating
-public interface AwsImAuthentication extends Authentication {
+public interface AwsAccessKeyCredentialsProvider extends CredentialsProvider {
 }
-

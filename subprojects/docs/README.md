@@ -8,7 +8,7 @@ The following is some help for working with the docs, all file paths are relativ
 
 The release notes are generated from `src/docs/release/notes.md`.
 
-### Schema 
+### Schema
 
 Every `h2` tag and `h3` will be listed in the generated TOC.
 
@@ -158,3 +158,9 @@ The output is available in the `dsl`, `javadoc` and `groovydoc` directories resp
 There is a convenience task to build all of the documentation:
 
     ./gradlew docs:docs
+
+
+
+
+I think http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html is more of an implementation detail of the AWS SDK than a credentials provider in the sense that Adam is talking about. As Adam said a credentials provider is where the credentials come from: It could be from the command prompt, it could be from another HTTP endpoint, it could be from SSH keys in a local directory, an environment variable, a managed model, etc.
+If we take the example of IAM, the actual credentials are an "AccessKeyId", "SecretAccessKey" and a "Token", the provider of those credentials is something that knows how to get those credentials from the instance metadata of an EC2 machine. Right now that "something"/credentials provider is an implementation detail of the AWS SDK. I think what we are missing is a Gradle way to model that provider.

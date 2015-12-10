@@ -16,6 +16,7 @@
 
 package org.gradle.internal.resource.connector;
 
+import org.gradle.api.credentials.CredentialsProvider;
 import org.gradle.authentication.Authentication;
 
 import java.util.Collection;
@@ -24,4 +25,6 @@ public interface ResourceConnectorSpecification {
     <T> T getCredentials(Class<T> type);
 
     Collection<Authentication> getAuthentications();
+
+    Iterable<Class<? extends CredentialsProvider>> getCredentialsProviders();
 }

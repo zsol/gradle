@@ -18,6 +18,7 @@ package org.gradle.internal.resource.transport.file;
 
 import com.google.common.collect.Sets;
 import org.gradle.authentication.Authentication;
+import org.gradle.internal.credentials.AuthenticationProtocol;
 import org.gradle.internal.resource.connector.ResourceConnectorFactory;
 import org.gradle.internal.resource.connector.ResourceConnectorSpecification;
 import org.gradle.internal.resource.transfer.ExternalResourceConnector;
@@ -38,5 +39,10 @@ public class FileConnectorFactory implements ResourceConnectorFactory {
     @Override
     public ExternalResourceConnector createResourceConnector(ResourceConnectorSpecification connectionDetails) {
         throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Iterable<? extends AuthenticationProtocol> getAuthenticationProtocols() {
+        return null;
     }
 }

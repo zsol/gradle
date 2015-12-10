@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-package org.gradle.internal.resource.connector;
+/**
+ * Classes related to transport authentication protocols via AWS s3.
+ *
+ * @since 2.9
+ */
+@Incubating
+package org.gradle.credentials;
 
-import org.gradle.authentication.Authentication;
-import org.gradle.internal.credentials.AuthenticationProtocol;
-import org.gradle.internal.resource.transfer.ExternalResourceConnector;
-
-import java.util.Set;
-
-public interface ResourceConnectorFactory {
-    Set<String> getSupportedProtocols();
-
-    Set<Class<? extends Authentication>> getSupportedAuthentication();
-
-    ExternalResourceConnector createResourceConnector(ResourceConnectorSpecification connectionDetails);
-
-    Iterable<? extends AuthenticationProtocol> getAuthenticationProtocols();
-}
+import org.gradle.api.Incubating;

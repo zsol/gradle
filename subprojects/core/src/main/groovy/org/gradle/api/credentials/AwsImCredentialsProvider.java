@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package org.gradle.internal.authentication;
+package org.gradle.api.credentials;
 
-import org.gradle.authentication.aws.AwsImAuthentication;
-
-public class DefaultAwsImAuthentication extends AbstractAuthentication implements AwsImAuthentication {
-
-    public DefaultAwsImAuthentication(String name) {
-        super(name, AwsImAuthentication.class);
-    }
-
-
-    @Override
-    public boolean requiresCredentials() {
-        return false;
-    }
+public interface AwsImCredentialsProvider extends CredentialsProvider {
 }

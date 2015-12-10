@@ -131,9 +131,7 @@ task retrieve(type: Sync) {
 repositories {
     maven {
         url "${mavenS3Repo.uri}"
-         authentication {
-            awsIm(AwsImAuthentication)
-         }
+        credentials(AwsImCredentialsProvider)
     }
 }
 configurations { compile }
@@ -175,7 +173,7 @@ task retrieve(type: Sync) {
         then:
         module.artifact
     }
-    
+
     class AwsImStubSupport {
         static stubRoleNames(S3Server s3Server, List<String> roleNames) {
             s3Server.expect(HttpStub.stubInteraction {

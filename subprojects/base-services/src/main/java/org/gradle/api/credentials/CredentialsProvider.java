@@ -14,20 +14,11 @@
  * limitations under the License.
  */
 
-package org.gradle.internal.resource.connector;
+package org.gradle.api.credentials;
 
-import org.gradle.authentication.Authentication;
-import org.gradle.internal.credentials.AuthenticationProtocol;
-import org.gradle.internal.resource.transfer.ExternalResourceConnector;
-
-import java.util.Set;
-
-public interface ResourceConnectorFactory {
-    Set<String> getSupportedProtocols();
-
-    Set<Class<? extends Authentication>> getSupportedAuthentication();
-
-    ExternalResourceConnector createResourceConnector(ResourceConnectorSpecification connectionDetails);
-
-    Iterable<? extends AuthenticationProtocol> getAuthenticationProtocols();
+/**
+ * A general interface for a provider of credentials Credentials can come from several places; environment variables, from a build script, from another external system, etc.
+ */
+public interface CredentialsProvider {
+    Class<? extends Credentials> getCredentialsType();
 }

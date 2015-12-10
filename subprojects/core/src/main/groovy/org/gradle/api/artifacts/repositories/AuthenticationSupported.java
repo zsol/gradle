@@ -18,6 +18,7 @@ package org.gradle.api.artifacts.repositories;
 import org.gradle.api.Action;
 import org.gradle.api.Incubating;
 import org.gradle.api.credentials.Credentials;
+import org.gradle.api.credentials.CredentialsProvider;
 import org.gradle.internal.HasInternalProtocol;
 
 /**
@@ -132,4 +133,13 @@ public interface AuthenticationSupported {
      */
     @Incubating
     AuthenticationContainer getAuthentication();
+
+    /**
+     * Configures a {@link CredentialsProvider} type for this repository
+     * @param credentialsProvider the credentialsProvider
+     * @param <T> a type which extends {@link CredentialsProvider}
+     */
+    @Incubating
+    <T extends CredentialsProvider> void credentials(Class<T> credentialsProvider);
+
 }

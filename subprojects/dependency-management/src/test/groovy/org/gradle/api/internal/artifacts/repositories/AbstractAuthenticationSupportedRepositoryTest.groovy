@@ -20,10 +20,10 @@ import org.gradle.api.Action
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.artifacts.repositories.AuthenticationContainer
 import org.gradle.api.artifacts.repositories.PasswordCredentials
-import org.gradle.authentication.Authentication
 import org.gradle.api.credentials.AwsCredentials
+import org.gradle.api.credentials.AwsImCredentialsProvider
 import org.gradle.api.credentials.Credentials
-import org.gradle.api.internal.ClosureBackedAction
+import org.gradle.authentication.Authentication
 import org.gradle.internal.authentication.DefaultAuthenticationContainer
 import org.gradle.internal.credentials.DefaultAwsCredentials
 import org.gradle.internal.reflect.DirectInstantiator
@@ -76,14 +76,8 @@ class AbstractAuthenticationSupportedRepositoryTest extends Specification {
 
         AuthSupportedRepository repo = new AuthSupportedRepository(instantiator, authenticationContainer)
 
-        def action = new ClosureBackedAction<DefaultAwsCredentials>({
-            accessKey = 'key'
-            secretKey = 'secret'
-        })
-
         expect:
         repo.getCredentials(AwsCredentials.class) instanceof AwsCredentials
-
     }
 
 
@@ -208,6 +202,11 @@ class AbstractAuthenticationSupportedRepositoryTest extends Specification {
 
         then:
         thrown InvalidUserDataException
+    }
+
+    def "can add a cedentials provider"() {
+        expect:
+        repo().credentials(AwsImCredentialsProvider)
     }
 
     private void enhanceCredentials(Credentials credentials, String... props) {

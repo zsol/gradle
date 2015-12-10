@@ -21,6 +21,7 @@ import org.gradle.authentication.Authentication;
 import org.gradle.authentication.http.BasicAuthentication;
 import org.gradle.authentication.http.DigestAuthentication;
 import org.gradle.internal.authentication.AllSchemesAuthentication;
+import org.gradle.internal.credentials.AuthenticationProtocol;
 import org.gradle.internal.resource.connector.ResourceConnectorFactory;
 import org.gradle.internal.resource.connector.ResourceConnectorSpecification;
 import org.gradle.internal.resource.transfer.DefaultExternalResourceConnector;
@@ -51,5 +52,10 @@ public class HttpConnectorFactory implements ResourceConnectorFactory {
         HttpResourceLister lister = new HttpResourceLister(accessor);
         HttpResourceUploader uploader = new HttpResourceUploader(http);
         return new DefaultExternalResourceConnector(accessor, lister, uploader);
+    }
+
+    @Override
+    public Iterable<? extends AuthenticationProtocol> getAuthenticationProtocols() {
+        return null;
     }
 }

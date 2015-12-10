@@ -19,6 +19,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.credentials.Credentials;
+import org.gradle.api.credentials.CredentialsProvider;
 import org.gradle.api.internal.artifacts.ivyservice.CacheLockingManager;
 import org.gradle.api.internal.file.TemporaryFileProvider;
 import org.gradle.authentication.Authentication;
@@ -75,11 +76,15 @@ public class RepositoryTransportFactory {
         return validSchemes;
     }
 
-    public RepositoryTransport createTransport(String scheme, String name, Collection<Authentication> authentications) {
-        return createTransport(Collections.singleton(scheme), name, authentications);
+    public RepositoryTransport createTransport(String scheme, String name, Collection<Authentication> authentications, Iterable<Class<? extends CredentialsProvider>> credentialsProviders) {
+        return doCreateTransport(Collections.singleton(scheme), name, authentications, credentialsProviders);
     }
 
-    public RepositoryTransport createTransport(Set<String> schemes, String name, Collection<Authentication> authentications) {
+    public RepositoryTransport createTransport(Set<String> schemes, String name, Collection<Authentication> authentications, Iterable<Class<? extends CredentialsProvider>> credentialsProviders) {
+        return doCreateTransport(schemes, name, authentications, credentialsProviders);
+    }
+
+    public RepositoryTransport doCreateTransport(Set<String> schemes, String name, Collection<Authentication> authentications, Iterable<Class<? extends CredentialsProvider>> credentialsProviders) {
         validateSchemes(schemes);
 
         ResourceConnectorFactory connectorFactory = findConnectorFactory(schemes);
@@ -94,7 +99,7 @@ public class RepositoryTransportFactory {
         if (Collections.singleton("file").containsAll(schemes)) {
             return new FileTransport(name);
         }
-        ResourceConnectorSpecification connectionDetails = new DefaultResourceConnectorSpecification(authentications);
+        ResourceConnectorSpecification connectionDetails = new DefaultResourceConnectorSpecification(authentications, credentialsProviders);
         ExternalResourceConnector resourceConnector = connectorFactory.createResourceConnector(connectionDetails);
         return new ResourceConnectorRepositoryTransport(name, progressLoggerFactory, temporaryFileProvider, cachedExternalResourceIndex, timeProvider, cacheLockingManager, resourceConnector);
     }
@@ -156,9 +161,11 @@ public class RepositoryTransportFactory {
 
     private class DefaultResourceConnectorSpecification implements ResourceConnectorSpecification {
         private final Collection<Authentication> authentications;
+        private final Iterable<Class<? extends CredentialsProvider>> credentialsProviders;
 
-        private DefaultResourceConnectorSpecification(Collection<Authentication> authentications) {
+        private DefaultResourceConnectorSpecification(Collection<Authentication> authentications, Iterable<Class<? extends CredentialsProvider>> credentialsProviders) {
             this.authentications = authentications;
+            this.credentialsProviders = credentialsProviders;
         }
 
         @Override
@@ -182,6 +189,11 @@ public class RepositoryTransportFactory {
         @Override
         public Collection<Authentication> getAuthentications() {
             return authentications;
+        }
+
+        @Override
+        public Iterable<Class<? extends CredentialsProvider>> getCredentialsProviders() {
+            return this.credentialsProviders;
         }
     }
 }

@@ -19,16 +19,19 @@ package org.gradle.internal.resource.transport.aws.s3;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.InstanceProfileCredentialsProvider;
+import com.amazonaws.auth.*;
+import com.amazonaws.internal.StaticCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.*;
 import com.google.common.base.Optional;
+import com.google.common.collect.Iterables;
 import org.gradle.api.artifacts.repositories.PasswordCredentials;
 import org.gradle.api.credentials.AwsCredentials;
+import org.gradle.api.credentials.Credentials;
+import org.gradle.api.credentials.CredentialsProvider;
+import org.gradle.credentials.AwsSessionCredentials;
+import org.gradle.internal.credentials.AbstractCredentialsProvider;
 import org.gradle.internal.resource.ResourceException;
 import org.gradle.internal.resource.transport.http.HttpProxySettings;
 import org.slf4j.Logger;
@@ -40,6 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.google.common.collect.Lists.newArrayList;
 
 public class S3Client {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Client.class);
@@ -63,14 +68,29 @@ public class S3Client {
         AmazonS3Client s3 = new AmazonS3Client(credentials, createConnectionProperties(s3ConnectionProperties));
         return new S3Client(s3, s3ConnectionProperties);
     }
-    public static S3Client forInstanceMetaData() {
-        return S3Client.of(new InstanceProfileCredentialsProvider());
-    }
 
     private static S3Client of(AWSCredentialsProvider awsCredentialsProvider) {
         S3ConnectionProperties s3ConnectionProperties = new S3ConnectionProperties();
         AmazonS3Client s3 = new AmazonS3Client(awsCredentialsProvider, createConnectionProperties(s3ConnectionProperties));
         return new S3Client(s3, s3ConnectionProperties);
+    }
+
+    public static S3Client from(Iterable<AbstractCredentialsProvider<? extends Credentials, ? extends CredentialsProvider>> credentialsProviders, Optional<AwsCredentials> awsCredentialsOptional) {
+        List<AWSCredentialsProvider> providers = newArrayList();
+        if (awsCredentialsOptional.isPresent()) {
+            AwsCredentials a = awsCredentialsOptional.get();
+            providers.add(new StaticCredentialsProvider(new BasicAWSCredentials(a.getAccessKey(), a.getSecretKey())));
+        }
+        for (AbstractCredentialsProvider<? extends Credentials, ? extends CredentialsProvider> provider : credentialsProviders) {
+            Credentials credentials = provider.get();
+            if (credentials instanceof AwsSessionCredentials) {
+                AwsSessionCredentials c = (AwsSessionCredentials) credentials;
+                providers.add(new StaticCredentialsProvider(new BasicSessionCredentials(c.getAccessKey(), c.getSecretKey(), c.getToken())));
+            }
+        }
+
+        AWSCredentialsProviderChain awsCredentialsProviderChain = new AWSCredentialsProviderChain(Iterables.toArray(providers, AWSCredentialsProvider.class));
+        return of(awsCredentialsProviderChain);
     }
 
     private void configureClientOptions(AmazonS3Client amazonS3Client) {
@@ -210,5 +230,4 @@ public class S3Client {
             amazonS3Client.setRegion(s3RegionalResource.getRegion());
         }
     }
-
 }

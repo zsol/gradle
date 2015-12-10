@@ -16,7 +16,6 @@
 
 package org.gradle.internal.resource.transport.aws.s3
 
-import org.gradle.api.credentials.AwsCredentials
 import org.gradle.internal.resource.connector.ResourceConnectorSpecification
 import spock.lang.Specification
 
@@ -27,14 +26,13 @@ class S3ConnectorFactoryTest extends Specification {
     def "fails when no aws credentials provided"() {
         setup:
         def resourceConnectorSpecification = Mock(ResourceConnectorSpecification)
-        1 * resourceConnectorSpecification.getAuthentications() >> []
-        1 * resourceConnectorSpecification.getCredentials(AwsCredentials) >> null
+        1 * resourceConnectorSpecification.getCredentialsProviders() >> []
 
         when:
         factory.createResourceConnector(resourceConnectorSpecification)
 
         then:
         def e = thrown(IllegalArgumentException)
-        e.message == "AwsCredentials must be set for S3 backed repository."
+        e.message == "At least one CredentialsProvider is required"
     }
 }
