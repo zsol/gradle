@@ -37,8 +37,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.gradle.model.internal.manage.schema.extract.MethodType.*;
 import static org.gradle.model.internal.manage.schema.extract.ModelSchemaUtils.*;
+import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole.*;
 
 public class ManagedImplStructStrategy extends StructSchemaExtractionStrategySupport {
 
@@ -119,7 +119,7 @@ public class ManagedImplStructStrategy extends StructSchemaExtractionStrategySup
     protected void validateMethodDeclarationHierarchy(ModelSchemaExtractionContext<?> context, CandidateMethods candidateMethods) {
         for (String methodName : candidateMethods.methodNames()) {
             Collection<Equivalence.Wrapper<Method>> handledOverridden = Lists.newArrayList();
-            if (!MethodType.isPropertyMethodName(methodName)) {
+            if (!PropertyAccessorRole.isPropertyMethodName(methodName)) {
                 Map<Equivalence.Wrapper<Method>, Collection<Method>> overridden = candidateMethods.overriddenMethodsNamed(methodName);
                 if (!overridden.isEmpty()) {
                     handleOverriddenMethods(context, overridden.values());
@@ -193,7 +193,7 @@ public class ManagedImplStructStrategy extends StructSchemaExtractionStrategySup
     @Override
     protected void validateProperty(ModelSchemaExtractionContext<?> context, ModelPropertyExtractionContext property) {
         PropertyAccessorExtractionContext mergedGetter = property.mergeGetters();
-        PropertyAccessorExtractionContext setter = property.getSetter();
+        PropertyAccessorExtractionContext setter = property.getAccessor(SETTER);
         if (setter != null) {
             Method mostSpecificSetter = setter.getMostSpecificDeclaration();
             if (mergedGetter == null) {
