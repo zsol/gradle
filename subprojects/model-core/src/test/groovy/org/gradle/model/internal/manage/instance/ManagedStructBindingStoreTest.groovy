@@ -24,7 +24,7 @@ import spock.lang.Specification
 
 class ManagedStructBindingStoreTest extends Specification {
     def aspectExtractor = new ModelSchemaAspectExtractor()
-    def schemaStore = new DefaultModelSchemaStore(new DefaultModelSchemaExtractor([new NewStructSchemaExtractionStrategy(aspectExtractor)], aspectExtractor))
+    def schemaStore = new DefaultModelSchemaStore(DefaultModelSchemaExtractor.withDefaultStrategies([new NewStructSchemaExtractionStrategy(aspectExtractor)], aspectExtractor))
     def bindingStore = new ManagedStructBindingStore(schemaStore)
 
     def "extracts empty"() {

@@ -39,7 +39,7 @@ class NewManagedProxyClassGeneratorTest extends Specification {
     def typeConverter = new DefaultTypeConverter(Stub(FileResolver))
 
     def aspectExtractor = new ModelSchemaAspectExtractor()
-    def schemaStore = new DefaultModelSchemaStore(new DefaultModelSchemaExtractor([new NewStructSchemaExtractionStrategy(aspectExtractor)], aspectExtractor))
+    def schemaStore = new DefaultModelSchemaStore(DefaultModelSchemaExtractor.withDefaultStrategies([new NewStructSchemaExtractionStrategy(aspectExtractor)], aspectExtractor))
     def bindingStore = new ManagedStructBindingStore(schemaStore)
 
     def "generates a node backed view class for an interface"() {
