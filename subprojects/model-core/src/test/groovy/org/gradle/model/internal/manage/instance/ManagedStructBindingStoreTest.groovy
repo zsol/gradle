@@ -30,7 +30,7 @@ class ManagedStructBindingStoreTest extends Specification {
     def "extracts empty"() {
         def bindings = extract(Object)
         expect:
-        bindings.viewSchemas*.type*.rawClass as List == [Object]
+        bindings.allViewSchemas*.type*.rawClass as List == [Object]
         bindings.delegateSchema == null
         bindings.generatedProperties.isEmpty()
         bindings.viewBindings.isEmpty()
@@ -45,7 +45,7 @@ class ManagedStructBindingStoreTest extends Specification {
     def "extracts simple type with a managed property"() {
         def bindings = extract(TypeWithAbstractProperty)
         expect:
-        bindings.viewSchemas*.type*.rawClass as List == [TypeWithAbstractProperty]
+        bindings.allViewSchemas*.type*.rawClass as List == [TypeWithAbstractProperty]
         bindings.delegateSchema == null
         bindings.generatedProperties.values()*.name as List == ["z"]
         bindings.viewBindings.isEmpty()
@@ -59,7 +59,7 @@ class ManagedStructBindingStoreTest extends Specification {
     def "extracts simple type with an implemented property"() {
         def bindings = extract(TypeWithImplementedProperty)
         expect:
-        bindings.viewSchemas*.type*.rawClass as List == [TypeWithImplementedProperty]
+        bindings.allViewSchemas*.type*.rawClass as List == [TypeWithImplementedProperty]
         bindings.delegateSchema == null
         bindings.generatedProperties.isEmpty()
         bindings.viewBindings*.name == ["getZ", "setZ"]
@@ -73,7 +73,7 @@ class ManagedStructBindingStoreTest extends Specification {
     def "extracts simple type with a delegated property"() {
         def bindings = extract(TypeWithAbstractProperty, DelegateTypeWithImplementedProperty)
         expect:
-        bindings.viewSchemas*.type*.rawClass as List == [TypeWithAbstractProperty]
+        bindings.allViewSchemas*.type*.rawClass as List == [TypeWithAbstractProperty]
         bindings.delegateSchema.type.rawClass == DelegateTypeWithImplementedProperty
         bindings.generatedProperties.isEmpty()
         bindings.viewBindings.isEmpty()
@@ -136,7 +136,7 @@ class ManagedStructBindingStoreTest extends Specification {
     def "detects overloads"() {
         def bindings = extract(OverloadingNumber, OverloadingIntegerImpl)
         expect:
-        bindings.viewSchemas*.type*.rawClass as List == [OverloadingNumber]
+        bindings.allViewSchemas*.type*.rawClass as List == [OverloadingNumber]
         bindings.delegateSchema.type.rawClass == OverloadingIntegerImpl
         bindings.generatedProperties.isEmpty()
         bindings.viewBindings.isEmpty()

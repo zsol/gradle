@@ -120,9 +120,9 @@ public class NewManagedProxyClassGenerator extends AbstractProxyClassGenerator {
      *     <li>methods that call through to the delegate instance</li>
      * </ul>
      */
-    public <T, M extends T, D extends T> Class<? extends M> generate(Class<? extends GeneratedViewState> backingStateType, NewStructSchema<M> viewSchema, ManagedStructBindingStore.ManagedStructBinding bindings) {
+    public <T, M extends T, D extends T> Class<? extends M> generate(Class<? extends GeneratedViewState> backingStateType, NewStructSchema<M> viewSchema, ManagedStructBindingStore.ManagedStructBinding<?> bindings) {
         NewStructSchema<D> delegateSchema = Cast.uncheckedCast(bindings.getDelegateSchema());
-        if (!bindings.getViewSchemas().contains(viewSchema)) {
+        if (!bindings.getAllViewSchemas().contains(viewSchema)) {
             throw new IllegalArgumentException(String.format("View schema '%s' is not supported by bindings", viewSchema.getType()));
         }
         ClassWriter visitor = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
@@ -185,7 +185,7 @@ public class NewManagedProxyClassGenerator extends AbstractProxyClassGenerator {
         return defineClass(visitor, targetClassLoader, generatedTypeName);
     }
 
-    private void generateProxyClass(ClassWriter visitor, NewStructSchema<?> viewSchema, ManagedStructBindingStore.ManagedStructBinding bindings, Collection<String> interfacesToImplement,
+    private void generateProxyClass(ClassWriter visitor, NewStructSchema<?> viewSchema, ManagedStructBindingStore.ManagedStructBinding<?> bindings, Collection<String> interfacesToImplement,
                                     Type generatedType, Type superclassType, Class<? extends GeneratedViewState> backingStateType) {
         Class<?> viewClass = viewSchema.getType().getConcreteClass();
         declareClass(visitor, interfacesToImplement, generatedType, superclassType);
@@ -405,7 +405,7 @@ public class NewManagedProxyClassGenerator extends AbstractProxyClassGenerator {
         methodVisitor.visitFieldInsn(PUTFIELD, generatedType.getInternalName(), CAN_CALL_SETTERS_FIELD_NAME, Type.BOOLEAN_TYPE.getDescriptor());
     }
 
-    private void writeViewMethods(ClassVisitor visitor, Type generatedType, NewStructSchema<?> viewSchema, ManagedStructBindingStore.ManagedStructBinding bindings) {
+    private void writeViewMethods(ClassVisitor visitor, Type generatedType, NewStructSchema<?> viewSchema, ManagedStructBindingStore.ManagedStructBinding<?> bindings) {
         NewStructSchema<?> delegateSchema = bindings.getDelegateSchema();
         if (delegateSchema != null) {
             declareDelegateField(visitor, delegateSchema);
