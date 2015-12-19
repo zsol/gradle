@@ -67,9 +67,9 @@ public class BaseInstanceFactory<T> implements InstanceFactory<T> {
 
     @Override
     public <S extends T> ImplementationInfo<T> getManagedSubtypeImplementationInfo(final ModelType<S> publicType) {
-        if (!isManaged(publicType)) {
-            throw new IllegalArgumentException(String.format("Type '%s' is not managed", publicType));
-        }
+//        if (!isManaged(publicType)) {
+//            throw new IllegalArgumentException(String.format("Type '%s' is not managed", publicType));
+//        }
         final List<ImplementationInfo<T>> implementationInfos = Lists.newArrayListWithCapacity(1);
         ModelSchemaUtils.walkTypeHierarchy(publicType.getConcreteClass(), new RegistrationHierarchyVisitor<S>() {
             @Override

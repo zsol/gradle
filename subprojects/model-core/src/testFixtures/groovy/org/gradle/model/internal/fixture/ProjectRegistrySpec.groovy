@@ -44,7 +44,7 @@ class ProjectRegistrySpec extends Specification {
         MANAGED_PROXY_FACTORY = services.get(ManagedProxyFactory)
         MODEL_RULE_EXTRACTOR = services.get(ModelRuleExtractor)
         NODE_INITIALIZER_REGISTRY = new DefaultNodeInitializerRegistry(SCHEMA_STORE)
-        BINDING_STORE = new ManagedStructBindingStore(SCHEMA_STORE)
+        BINDING_STORE = new ManagedStructBindingStore()
     }
 
     ModelRegistry registry = createModelRegistry()

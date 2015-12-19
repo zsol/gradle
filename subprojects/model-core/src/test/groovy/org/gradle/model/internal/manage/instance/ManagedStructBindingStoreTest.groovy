@@ -15,17 +15,18 @@
  */
 
 package org.gradle.model.internal.manage.instance
+
+import org.gradle.model.internal.manage.schema.NewStructSchema
 import org.gradle.model.internal.manage.schema.extract.DefaultModelSchemaExtractor
 import org.gradle.model.internal.manage.schema.extract.DefaultModelSchemaStore
 import org.gradle.model.internal.manage.schema.extract.ModelSchemaAspectExtractor
 import org.gradle.model.internal.manage.schema.extract.NewStructSchemaExtractionStrategy
-import org.gradle.model.internal.type.ModelType
 import spock.lang.Specification
 
 class ManagedStructBindingStoreTest extends Specification {
     def aspectExtractor = new ModelSchemaAspectExtractor()
     def schemaStore = new DefaultModelSchemaStore(DefaultModelSchemaExtractor.withDefaultStrategies([new NewStructSchemaExtractionStrategy(aspectExtractor)], aspectExtractor))
-    def bindingStore = new ManagedStructBindingStore(schemaStore)
+    def bindingStore = new ManagedStructBindingStore()
 
     def "extracts empty"() {
         def bindings = extract(Object)
@@ -151,6 +152,10 @@ class ManagedStructBindingStoreTest extends Specification {
         return extract(type, [], delegateType)
     }
     def extract(Class<?> type, List<Class<?>> viewTypes, Class<?> delegateType = null) {
-        return bindingStore.getBinding(ModelType.of(type), viewTypes.collect { ModelType.of(it) }, delegateType == null ? null : ModelType.of(delegateType))
+        return bindingStore.getBinding(
+            (NewStructSchema) schemaStore.getSchema(type),
+            viewTypes.collect { (NewStructSchema) schemaStore.getSchema(it) },
+            delegateType == null ? null : (NewStructSchema) schemaStore.getSchema(delegateType)
+        )
     }
 }

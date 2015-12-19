@@ -23,14 +23,12 @@ import org.gradle.model.internal.manage.schema.extract.ModelSchemaAspect;
 import org.gradle.model.internal.method.WeaklyTypeReferencingMethod;
 import org.gradle.model.internal.type.ModelType;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.gradle.model.internal.manage.schema.extract.ModelSchemaUtils.weakMethodOrder;
 
 public class NewStructSchema<T> extends AbstractModelSchema<T> implements CompositeSchema<T> {
-    private final Map<String, NewModelProperty<?>> properties;
+    private final ImmutableSortedMap<String, NewModelProperty<?>> properties;
     private final Set<WeaklyTypeReferencingMethod<?, ?>> nonPropertyMethods;
     private final Set<? extends ModelSchemaAspect> aspects;
 
@@ -41,12 +39,20 @@ public class NewStructSchema<T> extends AbstractModelSchema<T> implements Compos
         this.aspects = ImmutableSet.copyOf(aspects);
     }
 
+    public SortedSet<String> getPropertyNames() {
+        return properties.keySet();
+    }
+
     public Collection<NewModelProperty<?>> getProperties() {
         return properties.values();
     }
 
     public boolean hasProperty(String name) {
         return properties.containsKey(name);
+    }
+
+    public NewModelProperty<?> getProperty(String name) {
+        return properties.get(name);
     }
 
     public Set<WeaklyTypeReferencingMethod<?, ?>> getNonPropertyMethods() {
