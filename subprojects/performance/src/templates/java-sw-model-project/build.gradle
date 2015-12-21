@@ -81,6 +81,10 @@ model {
         }
         <% } %>
     }
+
+    tasks {
+        create("configureAll")
+    }
 }
 
 class ClasspathWiring extends RuleSource {
@@ -158,6 +162,20 @@ class CheckstyleWiring extends RuleSource {
     }
 }
 
+class ConfigureWiring extends RuleSource {
+    @Mutate
+    void wire(ModelMap<Task> tasks) {
+        def configureAll = tasks.get('configureAll')
+        tasks.all {
+            if (it.name != 'configureAll') {
+                configureAll.dependsOn(it)
+            }
+        }
+    }
+}
+
+apply plugin: ConfigureWiring
+apply plugin: CheckstyleWiring
 apply plugin: ClasspathWiring
 apply plugin: CheckstyleWiring
 <% if (binding.hasVariable('testComponent') && testComponent) { %>

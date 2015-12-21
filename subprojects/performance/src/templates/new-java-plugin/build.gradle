@@ -18,10 +18,10 @@ model {
     }
     tasks {
         create("test", Test) {
-            dependsOn "jar", "compileTestJava", "processTestResources"
+            dependsOn "mainJar", "compileTestJava", "processTestResources"
         }
         create("compileTestJava", JavaCompile) {
-            dependsOn "jar"
+            dependsOn "mainJar"
         }
         create("processTestResources", Copy) {
 
@@ -46,17 +46,13 @@ model {
     tasks.check {
         dependsOn "test"
     }
-    tasks.build {
-        // not quite parity with the old build, we have no way of expressing
-        // tasks.build.dependsOn tasks.withType(Checkstyle)
-        dependsOn \$("tasks.checkstyleMain"), \$("tasks.checkstyleTest")
-    }
 
     checkstyle(CheckstyleExtension) {
         ignoreFailures = true
     }
 
     tasks {
+        create("configureAll")
         create("checkstyleMain", Checkstyle)
         create("checkstyleTest", Checkstyle)
         withType(Checkstyle, CheckstyleTaskDefaults)
@@ -117,3 +113,21 @@ class MyTaskClass extends DefaultTask {
     boolean flag
 
 }
+
+class CheckstyleWiring extends RuleSource {
+    @Mutate
+    void wire(ModelMap<Task> tasks) {
+        def build = tasks.get('build')
+        tasks.withType(Checkstyle).all {
+            build.dependsOn(it)
+        }
+        def configureAll = tasks.get('configureAll')
+        tasks.all {
+            if (it.name != 'configureAll') {
+                configureAll.dependsOn(it)
+            }
+        }
+    }
+}
+
+apply plugin: CheckstyleWiring

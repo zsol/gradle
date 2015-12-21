@@ -15,14 +15,12 @@
  */
 
 package org.gradle.performance
-
 import org.gradle.performance.categories.Experiment
 import org.gradle.performance.categories.JavaPerformanceTest
 import org.gradle.performance.measure.DataAmount
+import org.gradle.performance.measure.Duration
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
-
-import static org.gradle.performance.measure.Duration.millis
 
 @Category([Experiment, JavaPerformanceTest])
 class JavaSoftwareModelConfigurationPerformanceTest extends AbstractCrossVersionPerformanceTest {
@@ -50,5 +48,33 @@ class JavaSoftwareModelConfigurationPerformanceTest extends AbstractCrossVersion
         "largeJavaSwModelProject" | millis(500)
         "bigNewJava"              | millis(500)
         // TODO: these 2 template projects should be merged
+    }
+
+    @Unroll("Project '#testProject' measuring full configuration time")
+    def "configure java software model multiproject build"() {
+        given:
+        runner.testId = "configure fully new java multiproject $testProject"
+        runner.testProject = testProject
+        runner.tasksToRun = ['configureAll', *((1..<projectCount).collect { "project$it:configureAll" })]
+        runner.targetVersions = ['2.8', 'last']
+        runner.useDaemon = true
+        runner.maxExecutionTimeRegression = Duration.millis(maxExecutionTimeRegression)
+        runner.maxMemoryRegression = DataAmount.mbytes(150)
+        runner.gradleOpts = ["-Xms1g", "-Xmx1g", "-XX:MaxPermSize=256m"]
+        runner.args = ['--dry-run']
+
+        when:
+        def result = runner.run()
+
+        then:
+        result.assertCurrentVersionHasNotRegressed()
+
+        where:
+        testProject               | projectCount
+        "largeJavaSwModelProject" | 100
+        "bigNewJava"              | 500
+        // TODO: these 2 template projects should be merged
+
+        maxExecutionTimeRegression = 5 * projectCount
     }
 }

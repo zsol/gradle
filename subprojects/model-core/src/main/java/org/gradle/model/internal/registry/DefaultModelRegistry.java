@@ -44,7 +44,7 @@ public class DefaultModelRegistry implements ModelRegistryInternal {
     private final ModelGraph modelGraph;
     private final RuleBindings ruleBindings;
     private final ModelRuleExtractor ruleExtractor;
-    private final Set<RuleBinder> unboundRules = Sets.newIdentityHashSet();
+    private final List<RuleBinder> unboundRules = Lists.newLinkedList();
 
     public DefaultModelRegistry(ModelRuleExtractor ruleExtractor) {
         this.ruleExtractor = ruleExtractor;
