@@ -18,11 +18,13 @@ package org.gradle.internal.classloader;
 
 import com.google.common.collect.MapMaker;
 
+import java.net.URL;
 import java.util.concurrent.ConcurrentMap;
 
 public class CachingClassLoader extends ClassLoader implements ClassLoaderHierarchy {
-    private static final Object MISSING_CLASS = new Object();
+    private static final Object MISSING = new Object();
     private final ConcurrentMap<String, Object> loadedClasses = new MapMaker().weakValues().makeMap();
+    private final ConcurrentMap<String, Object> resources = new MapMaker().weakValues().makeMap();
     private final ClassLoader parent;
 
     public CachingClassLoader(ClassLoader parent) {
@@ -35,17 +37,34 @@ public class CachingClassLoader extends ClassLoader implements ClassLoaderHierar
         Object cachedValue = loadedClasses.get(name);
         if (cachedValue instanceof Class) {
             return (Class<?>) cachedValue;
-        } else if (cachedValue == MISSING_CLASS) {
+        } else if (cachedValue == MISSING) {
             throw new ClassNotFoundException(name);
         }
         Class<?> result;
         try {
             result = super.loadClass(name, resolve);
         } catch (ClassNotFoundException e) {
-            loadedClasses.putIfAbsent(name, MISSING_CLASS);
+            loadedClasses.putIfAbsent(name, MISSING);
             throw e;
         }
         loadedClasses.putIfAbsent(name, result);
+        return result;
+    }
+
+    @Override
+    public URL getResource(String name) {
+        Object cachedValue = resources.get(name);
+        if (cachedValue instanceof URL) {
+            return (URL) cachedValue;
+        } else if (cachedValue == MISSING) {
+            return null;
+        }
+        URL result = super.getResource(name);
+        if (result==null) {
+            resources.putIfAbsent(name, MISSING);
+        } else {
+            resources.putIfAbsent(name, result);
+        }
         return result;
     }
 
