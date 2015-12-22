@@ -46,6 +46,8 @@ import static org.apache.commons.lang.StringUtils.capitalize;
  * - Binary is flagged with {@link BinarySpecInternal#hasCodependentSources()}.
  */
 public class BinarySourceTransformations {
+    private static final SourceSetHavingSources SOURCE_SET_HAVING_SOURCES = new SourceSetHavingSources();
+
     private final TaskContainer tasks;
     private final Iterable<LanguageTransform<?, ?>> prioritizedTransforms;
     private final ServiceRegistry serviceRegistry;
@@ -107,12 +109,12 @@ public class BinarySourceTransformations {
     }
 
     private Set<LanguageSourceSetInternal> getSourcesToCompile(BinarySpecInternal binary) {
-        return Sets.newLinkedHashSet(binary.getInputs().withType(LanguageSourceSetInternal.class).matching(new Spec<LanguageSourceSetInternal>() {
-                        @Override
-                        public boolean isSatisfiedBy(LanguageSourceSetInternal element) {
-                            return element.getMayHaveSources();
-                        }
-                    }));
+        // we don't create a set with Sets.newLinkedHashSet(matching) because it will cause a call to matching.size() which will in turn trigger a file visit.
+        // We don't want to visit the same tree twice, so we create a set with the default size *then* add elements to it, which will only cause a single visit
+        // instead of 2.
+        Set<LanguageSourceSetInternal> filtered = Sets.newLinkedHashSet();
+        filtered.addAll(binary.getInputs().withType(LanguageSourceSetInternal.class).matching(SOURCE_SET_HAVING_SOURCES));
+        return filtered;
     }
 
     private String getTransformTaskName(LanguageTransform<?, ?> transform, SourceTransformTaskConfig taskConfig, BinarySpecInternal binary, LanguageSourceSetInternal sourceSetToCompile) {
@@ -129,5 +131,12 @@ public class BinarySourceTransformations {
             }
         }
         return null;
+    }
+
+    private static class SourceSetHavingSources implements Spec<LanguageSourceSetInternal> {
+        @Override
+        public boolean isSatisfiedBy(LanguageSourceSetInternal element) {
+            return element.getMayHaveSources();
+        }
     }
 }
