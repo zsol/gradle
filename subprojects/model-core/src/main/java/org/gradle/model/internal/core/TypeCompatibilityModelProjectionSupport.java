@@ -29,11 +29,13 @@ public abstract class TypeCompatibilityModelProjectionSupport<M> implements Mode
     private final ModelType<M> type;
     private final boolean canBeViewedAsImmutable;
     private final boolean canBeViewedAsMutable;
+    private final boolean typeIsPrimitive;
 
     public TypeCompatibilityModelProjectionSupport(ModelType<M> type, boolean canBeViewedAsImmutable, boolean canBeViewedAsMutable) {
         this.type = type;
         this.canBeViewedAsImmutable = canBeViewedAsImmutable;
         this.canBeViewedAsMutable = canBeViewedAsMutable;
+        this.typeIsPrimitive = type.getRawClass().isPrimitive();
     }
 
     protected ModelType<M> getType() {
@@ -45,7 +47,7 @@ public abstract class TypeCompatibilityModelProjectionSupport<M> implements Mode
     }
 
     private <T> boolean canBeAssignedTo(ModelType<T> targetType) {
-        return targetType.isAssignableFrom(type) || (targetType== ModelType.UNTYPED && type.getRawClass().isPrimitive());
+        return (typeIsPrimitive && targetType == ModelType.UNTYPED) || targetType.isAssignableFrom(type);
     }
 
     public <T> boolean canBeViewedAsImmutable(ModelType<T> targetType) {
