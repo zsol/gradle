@@ -60,6 +60,7 @@ class JavaSoftwareModelConfigurationPerformanceTest extends AbstractCrossVersion
         runner.useDaemon = true
         runner.maxExecutionTimeRegression = Duration.millis(maxExecutionTimeRegression)
         runner.maxMemoryRegression = DataAmount.mbytes(150)
+        //runner.gradleOpts = ["-Xms1g", "-Xmx1g", "-XX:MaxPermSize=256m", '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006']
         runner.gradleOpts = ["-Xms1g", "-Xmx1g", "-XX:MaxPermSize=256m"]
         runner.args = ['--dry-run']
 

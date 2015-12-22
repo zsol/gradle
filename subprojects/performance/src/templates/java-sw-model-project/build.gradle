@@ -21,10 +21,15 @@ configurations {
     checkstyle
 }
 
+if (GradleVersion.current() < GradleVersion.version('2.10')) {
+    dependencies {
+        <% if (dependencies) { dependencies.each { %>
+            compile "${it.shortNotation()}"
+            <% } } %>
+    }
+}
+
 dependencies {
-    <% if (dependencies) { dependencies.each { %>
-    compile "${it.shortNotation()}"
-    <% } } %>
     testCompile 'junit:junit:4.12'
     checkstyle "com.puppycrawl.tools:checkstyle:5.9"
 }
@@ -46,6 +51,11 @@ model {
                     projectDependencies.each {
 %>                  project ':project${it}' library 'main'
                     <% } %>
+                    if (GradleVersion.current() > GradleVersion.version('2.9')) {
+                        <% if (dependencies) { dependencies.each { %>
+                            module "${it.shortNotation()}"
+                            <% } } %>
+                    }
                 }
             <% if(binding.hasVariable('useApiDependencies') && useApiDependencies) { %>
             }
