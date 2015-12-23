@@ -25,12 +25,17 @@ import java.util.Set;
 
 public abstract class ModelTypes {
 
+    private static final ModelType.Builder.ParameterizedTypeCache MODELMAP_CACHE = new ModelType.Builder.ParameterizedTypeCache();
+    private static final ModelType.Builder.ParameterizedTypeCache MODELSET_CACHE = new ModelType.Builder.ParameterizedTypeCache();
+    private static final ModelType.Builder.ParameterizedTypeCache LIST_CACHE = new ModelType.Builder.ParameterizedTypeCache();
+    private static final ModelType.Builder.ParameterizedTypeCache SET_CACHE = new ModelType.Builder.ParameterizedTypeCache();
+
     public static <I> ModelType<ModelMap<I>> modelMap(Class<I> type) {
         return modelMap(ModelType.of(type));
     }
 
     public static <I> ModelType<ModelMap<I>> modelMap(ModelType<I> type) {
-        return new ModelType.Builder<ModelMap<I>>() {
+        return new ModelType.Builder<ModelMap<I>>(MODELMAP_CACHE) {
         }.where(
             new ModelType.Parameter<I>() {
             }, type
@@ -38,7 +43,7 @@ public abstract class ModelTypes {
     }
 
     public static <I> ModelType<ModelSet<I>> modelSet(ModelType<I> type) {
-        return new ModelType.Builder<ModelSet<I>>() {
+        return new ModelType.Builder<ModelSet<I>>(MODELSET_CACHE) {
         }.where(
             new ModelType.Parameter<I>() {
             }, type
@@ -46,7 +51,7 @@ public abstract class ModelTypes {
     }
 
     public static <I> ModelType<List<I>> list(ModelType<I> type) {
-        return new ModelType.Builder<List<I>>() {
+        return new ModelType.Builder<List<I>>(LIST_CACHE) {
         }.where(
             new ModelType.Parameter<I>() {
             }, type
@@ -54,7 +59,7 @@ public abstract class ModelTypes {
     }
 
     public static <I> ModelType<Set<I>> set(ModelType<I> type) {
-        return new ModelType.Builder<Set<I>>() {
+        return new ModelType.Builder<Set<I>>(SET_CACHE) {
         }.where(
             new ModelType.Parameter<I>() {
             }, type

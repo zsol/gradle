@@ -56,11 +56,12 @@ class JavaSoftwareModelConfigurationPerformanceTest extends AbstractCrossVersion
         runner.testId = "configure fully new java multiproject $testProject"
         runner.testProject = testProject
         runner.tasksToRun = ['configureAll', *((1..<projectCount).collect { "project$it:configureAll" })]
-        runner.targetVersions = ['2.8', 'last']
+        runner.targetVersions = ['last']
         runner.useDaemon = true
         runner.maxExecutionTimeRegression = Duration.millis(maxExecutionTimeRegression)
         runner.maxMemoryRegression = DataAmount.mbytes(150)
         //runner.gradleOpts = ["-Xms1g", "-Xmx1g", "-XX:MaxPermSize=256m", '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006']
+        //runner.gradleOpts = ["-Xms1g", "-Xmx1g", "-XX:MaxPermSize=256m", '-agentpath:/home/cchampeau/TOOLS/yjp-2015-build-15084/bin/linux-x86-64/libyjpagent.so']
         runner.gradleOpts = ["-Xms1g", "-Xmx1g", "-XX:MaxPermSize=256m"]
         runner.args = ['--dry-run']
 

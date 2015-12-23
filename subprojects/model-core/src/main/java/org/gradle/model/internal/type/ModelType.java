@@ -16,6 +16,10 @@
 
 package org.gradle.model.internal.type;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeResolver;
 import com.google.common.reflect.TypeToken;
@@ -24,16 +28,16 @@ import org.gradle.api.Nullable;
 import org.gradle.internal.Cast;
 
 import java.lang.annotation.Annotation;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 /**
- * A type token, representing a resolved type.
- * <p>
- * Importantly, instances do not hold strong references to class objects.
- * <p>
- * Construct a type via one of the public static methods, or by creating an AIC…
+ * A type token, representing a resolved type. <p> Importantly, instances do not hold strong references to class objects. <p> Construct a type via one of the public static methods, or by creating an
+ * AIC…
  * <pre>{@code
  * ModelType<List<String>> type = new ModelType<List<String>>() {};
  * }</pre>
@@ -41,39 +45,70 @@ import java.util.List;
 @ThreadSafe
 public abstract class ModelType<T> {
 
+    private final static LoadingCache<Type, TypeToken<?>> TYPETOKEN_CACHE = CacheBuilder.newBuilder()
+        .weakKeys()
+        .build(new CacheLoader<Type, TypeToken<?>>() {
+            @Override
+            public TypeToken<?> load(Type key) throws Exception {
+                return TypeToken.of(key);
+            }
+        });
+
+    private final static LoadingCache<Type, ModelType<?>> MODELTYPE_CACHE = CacheBuilder.newBuilder()
+        .weakKeys()
+        .build(new CacheLoader<Type, ModelType<?>>() {
+            @Override
+            public ModelType<?> load(Type key) throws Exception {
+                return new Simple<Object>(key);
+            }
+        });
+
+    private static final LoadingCache<Type, TypeWrapper> TYPEWRAPPER_CACHE = CacheBuilder.newBuilder()
+        .weakKeys()
+        .build(new CacheLoader<Type, TypeWrapper>() {
+            @Override
+            public TypeWrapper load(Type type) throws Exception {
+                return doWrap(type);
+            }
+        });
+
     public static final ModelType<Object> UNTYPED = ModelType.of(Object.class);
 
-    private final TypeWrapper wrapper;
+    private final CachingTypeWrapper wrapper;
 
     private ModelType(TypeWrapper wrapper) {
-        this.wrapper = wrapper;
+        this.wrapper = CachingTypeWrapper.of(getCachedTypeToken(wrapper.unwrap()));
     }
 
     protected ModelType() {
-        this.wrapper = wrap(new TypeToken<T>(getClass()) {
-        }.getType());
-    }
-
-    private TypeToken<T> getTypeToken() {
-        return Cast.uncheckedCast(TypeToken.of(getType()));
+        this.wrapper = CachingTypeWrapper.of(new TypeToken<T>(getClass()) {
+        });
     }
 
     public static <T> ModelType<T> of(Class<T> clazz) {
-        return new Simple<T>(clazz);
+        return of((Type) clazz);
+    }
+
+    public static <T> ModelType<T> of(Type type) {
+        return Cast.uncheckedCast(MODELTYPE_CACHE.getUnchecked(type));
     }
 
     public static <T> ModelType<T> returnType(Method method) {
-        return new Simple<T>(method.getGenericReturnType());
+        return Cast.uncheckedCast(of(method.getGenericReturnType()));
     }
 
     @Nullable
     public static <T> ModelType<T> paramType(Method method, int i) {
         Type[] parameterTypes = method.getGenericParameterTypes();
         if (i < parameterTypes.length) {
-            return new Simple<T>(parameterTypes[i]);
+            return of(parameterTypes[i]);
         } else {
             return null;
         }
+    }
+
+    private static TypeToken<?> getCachedTypeToken(Type t) {
+        return TYPETOKEN_CACHE.getUnchecked(t);
     }
 
     public static <T> ModelType<T> typeOf(T instance) {
@@ -82,12 +117,8 @@ public abstract class ModelType<T> {
         return of(clazz);
     }
 
-    public static ModelType<?> of(Type type) {
-        return Simple.typed(type);
-    }
-
     public Class<? super T> getRawClass() {
-        return getTypeToken().getRawType();
+        return Cast.uncheckedCast(wrapper.getTypeToken().getRawType());
     }
 
     public Class<T> getConcreteClass() {
@@ -125,10 +156,8 @@ public abstract class ModelType<T> {
     }
 
     /**
-     * Casts this {@code ModelType} object to represent a subclass of the class
-     * represented by the specified class object.  Checks that the cast
-     * is valid, and throws a {@code ClassCastException} if it is not.  If
-     * this method succeeds, it always returns a reference to this {@code ModelType} object.
+     * Casts this {@code ModelType} object to represent a subclass of the class represented by the specified class object.  Checks that the cast is valid, and throws a {@code ClassCastException} if it
+     * is not.  If this method succeeds, it always returns a reference to this {@code ModelType} object.
      *
      * @throws ClassCastException if this cannot be cast as the subtype of the given type.
      * @throws IllegalStateException if this is a wildcard.
@@ -150,7 +179,7 @@ public abstract class ModelType<T> {
     }
 
     public boolean isAssignableFrom(ModelType<?> modelType) {
-        return getTypeToken().isAssignableFrom(modelType.getTypeToken());
+        return wrapper.isAssignableFrom(modelType.wrapper);
     }
 
     public boolean isAnnotationPresent(Class<? extends Annotation> annotation) {
@@ -256,26 +285,53 @@ public abstract class ModelType<T> {
 
     @Override
     public int hashCode() {
-        return getTypeToken().hashCode();
+        return wrapper.getTypeToken().hashCode();
     }
 
     abstract public static class Builder<T> {
         private TypeToken<T> typeToken;
+        private final ParameterizedTypeCache resolvedCache;
 
+        public Builder(ParameterizedTypeCache cache) {
+            typeToken = new TypeToken<T>(getClass()) {
+            };
+            resolvedCache = cache;
+        }
         public Builder() {
             typeToken = new TypeToken<T>(getClass()) {
             };
+            resolvedCache = new ParameterizedTypeCache();
         }
 
         @SuppressWarnings("unchecked")
         public <I> Builder<T> where(Parameter<I> parameter, ModelType<I> type) {
-            TypeResolver resolver = new TypeResolver().where(parameter.typeVariable, type.getTypeToken().getType());
-            typeToken = (TypeToken<T>) TypeToken.of(resolver.resolveType(typeToken.getType()));
+            Type actualParameterType = type.wrapper.getTypeToken().getType();
+            TypeResolver typeResolver = new TypeResolver().where(parameter.typeVariable, actualParameterType);
+            typeToken = (TypeToken<T>) getCachedTypeToken(resolvedCache.resolveAndCache(typeResolver, typeToken.getType(), actualParameterType));
             return this;
         }
 
         public ModelType<T> build() {
-            return Simple.typed(typeToken.getType());
+            return of(typeToken.getType());
+        }
+
+        public static class ParameterizedTypeCache {
+            private final Cache<Type, Type> cache = CacheBuilder.newBuilder()
+                .weakKeys()
+                .build();
+
+            public final Type resolveAndCache(final TypeResolver typeResolver, final Type type, final Type actual) {
+                try {
+                    return cache.get(actual, new Callable<Type>() {
+                        @Override
+                        public Type call() throws Exception {
+                            return typeResolver.resolveType(type);
+                        }
+                    });
+                } catch (ExecutionException e) {
+                    return typeResolver.resolveType(type);
+                }
+            }
         }
     }
 
@@ -301,22 +357,27 @@ public abstract class ModelType<T> {
     private static TypeWrapper wrap(Type type) {
         if (type == null) {
             return null;
-        } else if (type instanceof Class) {
+        }
+        return TYPEWRAPPER_CACHE.getUnchecked(type);
+    }
+
+    private static TypeWrapper doWrap(Type type) {
+        if (type instanceof Class) {
             return new ClassTypeWrapper((Class<?>) type);
         } else if (type instanceof ParameterizedType) {
             ParameterizedType parameterizedType = (ParameterizedType) type;
             return new ParameterizedTypeWrapper(
-                    toWrappers(parameterizedType.getActualTypeArguments()),
-                    (ClassTypeWrapper) wrap(parameterizedType.getRawType()),
-                    wrap(parameterizedType.getOwnerType()),
-                    type.hashCode()
+                toWrappers(parameterizedType.getActualTypeArguments()),
+                (ClassTypeWrapper) wrap(parameterizedType.getRawType()),
+                wrap(parameterizedType.getOwnerType()),
+                type.hashCode()
             );
         } else if (type instanceof WildcardType) {
             WildcardType wildcardType = (WildcardType) type;
             return new WildcardTypeWrapper(
-                    toWrappers(wildcardType.getUpperBounds()),
-                    toWrappers(wildcardType.getLowerBounds()),
-                    type.hashCode()
+                toWrappers(wildcardType.getUpperBounds()),
+                toWrappers(wildcardType.getLowerBounds()),
+                type.hashCode()
             );
         } else if (type instanceof TypeVariable) {
             TypeVariable<?> typeVariable = (TypeVariable<?>) type;
@@ -360,12 +421,73 @@ public abstract class ModelType<T> {
     }
 
     private static class Simple<T> extends ModelType<T> {
-        public static <T> ModelType<T> typed(Type type) {
-            return new Simple<T>(type);
-        }
-
         public Simple(Type type) {
             super(wrap(type));
+        }
+    }
+
+    private static class CachingTypeWrapper implements TypeWrapper {
+
+        private final static Cache<TypeToken<?>, CachingTypeWrapper> WRAPPER_CACHE = CacheBuilder.newBuilder()
+            .weakKeys()
+            .build();
+
+        public static <T> CachingTypeWrapper of(final TypeToken<T> typeToken) {
+            try {
+                return WRAPPER_CACHE.get(typeToken, new Callable<CachingTypeWrapper>() {
+                    @Override
+                    public CachingTypeWrapper call() throws Exception {
+                        return new CachingTypeWrapper(wrap(typeToken.getType()));
+                    }
+                });
+            } catch (ExecutionException e) {
+                return null;
+            }
+        }
+
+        private final TypeWrapper delegate;
+        private SoftReference<TypeToken<?>> typeToken = new SoftReference<TypeToken<?>>(null);
+
+        private final LoadingCache<TypeToken<?>, Boolean> isAssignableCache = CacheBuilder.newBuilder()
+            .weakKeys()
+            .build(new CacheLoader<TypeToken<?>, Boolean>() {
+                @Override
+                public Boolean load(TypeToken<?> key) throws Exception {
+                    return getTypeToken().isAssignableFrom(key);
+                }
+            });
+
+        private CachingTypeWrapper(TypeWrapper delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void collectClasses(ImmutableList.Builder<Class<?>> builder) {
+            delegate.collectClasses(builder);
+        }
+
+        @Override
+        public String getRepresentation(boolean full) {
+            return delegate.getRepresentation(full);
+        }
+
+        @Override
+        public Type unwrap() {
+            return delegate.unwrap();
+        }
+
+        protected TypeToken<?> getTypeToken() {
+            TypeToken<?> typeToken = this.typeToken.get();
+            if (typeToken !=null) {
+                return typeToken;
+            }
+            typeToken = getCachedTypeToken(unwrap());
+            this.typeToken = new SoftReference<TypeToken<?>>(typeToken);
+            return typeToken;
+        }
+
+        public boolean isAssignableFrom(CachingTypeWrapper that) {
+            return isAssignableCache.getUnchecked(that.getTypeToken());
         }
     }
 
