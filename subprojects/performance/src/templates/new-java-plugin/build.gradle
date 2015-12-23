@@ -115,7 +115,7 @@ class MyTaskClass extends DefaultTask {
 }
 
 class CheckstyleWiring extends RuleSource {
-    @Mutate
+    @Finalize
     void wire(ModelMap<Task> tasks) {
         def build = tasks.get('build')
         tasks.withType(Checkstyle).all {

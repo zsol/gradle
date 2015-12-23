@@ -173,7 +173,7 @@ class CheckstyleWiring extends RuleSource {
 }
 
 class ConfigureWiring extends RuleSource {
-    @Mutate
+    @Finalize
     void wire(ModelMap<Task> tasks) {
         def configureAll = tasks.get('configureAll')
         tasks.all {
