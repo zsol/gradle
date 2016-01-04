@@ -29,7 +29,7 @@ import org.gradle.internal.Cast;
 import org.gradle.internal.UncheckedException;
 import org.gradle.internal.reflect.MethodSignatureEquivalence;
 import org.gradle.model.internal.manage.schema.NewStructSchema;
-import org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole;
+import org.gradle.model.internal.manage.schema.extract.PropertyAccessorType;
 import org.gradle.model.internal.method.WeaklyTypeReferencingMethod;
 import org.gradle.model.internal.type.ModelType;
 
@@ -95,7 +95,7 @@ public class ManagedStructBindingStore {
 
         for (WeaklyTypeReferencingMethod<?, ?> weakViewMethod : viewMethods) {
             Method viewMethod = weakViewMethod.getMethod();
-            PropertyAccessorRole propertyRole = PropertyAccessorRole.of(viewMethod);
+            PropertyAccessorType propertyRole = PropertyAccessorType.of(viewMethod);
             WeaklyTypeReferencingMethod<?, ?> weakDelegateMethod = delegateMethods.get(METHOD_EQUIVALENCE.wrap(viewMethod));
             MethodBinding binding;
             if (!Modifier.isAbstract(viewMethod.getModifiers())) {
@@ -142,11 +142,11 @@ public class ManagedStructBindingStore {
             if (allBindingsType == GeneratedPropertyMethodBinding.class) {
                 boolean foundGetter = false;
                 boolean foundSetter = false;
-                ImmutableMap.Builder<PropertyAccessorRole, WeaklyTypeReferencingMethod<?, ?>> accessorsBuilder = ImmutableMap.builder();
+                ImmutableMap.Builder<PropertyAccessorType, WeaklyTypeReferencingMethod<?, ?>> accessorsBuilder = ImmutableMap.builder();
                 ModelType<?> propertyType = null;
                 for (MethodBinding binding : bindings) {
                     GeneratedPropertyMethodBinding propertyBinding = (GeneratedPropertyMethodBinding) binding;
-                    PropertyAccessorRole role = propertyBinding.role;
+                    PropertyAccessorType role = propertyBinding.role;
                     switch (role) {
                         case GET_GETTER:
                         case IS_GETTER:
@@ -272,9 +272,9 @@ public class ManagedStructBindingStore {
     }
 
     public static class GeneratedPropertyMethodBinding extends MethodBinding {
-        private final PropertyAccessorRole role;
+        private final PropertyAccessorType role;
 
-        public GeneratedPropertyMethodBinding(WeaklyTypeReferencingMethod<?, ?> source, PropertyAccessorRole role) {
+        public GeneratedPropertyMethodBinding(WeaklyTypeReferencingMethod<?, ?> source, PropertyAccessorType role) {
             super(source);
             this.role = role;
         }
@@ -284,9 +284,9 @@ public class ManagedStructBindingStore {
         private final String name;
         private final ModelType<?> type;
         private final boolean hidden;
-        private final Map<PropertyAccessorRole, WeaklyTypeReferencingMethod<?, ?>> accessors;
+        private final Map<PropertyAccessorType, WeaklyTypeReferencingMethod<?, ?>> accessors;
 
-        public GeneratedProperty(String name, ModelType<?> type, boolean hidden, Map<PropertyAccessorRole, WeaklyTypeReferencingMethod<?, ?>> accessors) {
+        public GeneratedProperty(String name, ModelType<?> type, boolean hidden, Map<PropertyAccessorType, WeaklyTypeReferencingMethod<?, ?>> accessors) {
             this.name = name;
             this.type = type;
             this.hidden = hidden;
@@ -305,12 +305,12 @@ public class ManagedStructBindingStore {
             return hidden;
         }
 
-        public Map<PropertyAccessorRole, WeaklyTypeReferencingMethod<?, ?>> getAccessors() {
+        public Map<PropertyAccessorType, WeaklyTypeReferencingMethod<?, ?>> getAccessors() {
             return accessors;
         }
 
         public boolean isWritable() {
-            return accessors.containsKey(PropertyAccessorRole.SETTER);
+            return accessors.containsKey(PropertyAccessorType.SETTER);
         }
     }
 

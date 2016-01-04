@@ -24,7 +24,7 @@ import java.lang.reflect.Method;
 /**
  * Distinguishes "get" getters, "is" getters and setters from non-property methods.
  */
-public enum PropertyAccessorRole {
+public enum PropertyAccessorType {
     IS_GETTER(2) {
         @Override
         public ModelType<?> propertyTypeFor(Method method) {
@@ -48,7 +48,7 @@ public enum PropertyAccessorRole {
 
     private final int prefixLength;
 
-    PropertyAccessorRole(int prefixLength) {
+    PropertyAccessorType(int prefixLength) {
         this.prefixLength = prefixLength;
     }
 
@@ -59,7 +59,7 @@ public enum PropertyAccessorRole {
 
     abstract public ModelType<?> propertyTypeFor(Method method);
 
-    public static PropertyAccessorRole of(Method method) {
+    public static PropertyAccessorType of(Method method) {
         String methodName = method.getName();
         if (!hasVoidReturnType(method) && takesNoParameter(method)) {
             if (isGetGetterName(methodName)) {

@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import net.jcip.annotations.ThreadSafe;
 import org.gradle.internal.Cast;
-import org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole;
+import org.gradle.model.internal.manage.schema.extract.PropertyAccessorType;
 import org.gradle.model.internal.method.WeaklyTypeReferencingMethod;
 import org.gradle.model.internal.type.ModelType;
 
@@ -30,7 +30,7 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Set;
 
-import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole.*;
+import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorType.*;
 
 @ThreadSafe
 public class NewModelProperty<T> implements Comparable<NewModelProperty<?>> {
@@ -38,12 +38,12 @@ public class NewModelProperty<T> implements Comparable<NewModelProperty<?>> {
     private final String name;
     private final ModelType<T> type;
     private final Set<ModelType<?>> declaredBy;
-    private final ImmutableMap<PropertyAccessorRole, WeaklyTypeReferencingMethod<?, ?>> accessors;
+    private final ImmutableMap<PropertyAccessorType, WeaklyTypeReferencingMethod<?, ?>> accessors;
     private final boolean declaredAsHavingUnmanagedType;
     private ModelSchema<T> schema;
 
     public NewModelProperty(ModelType<T> type, String name, Set<ModelType<?>> declaredBy,
-                            Map<PropertyAccessorRole, WeaklyTypeReferencingMethod<?, ?>> accessors,
+                            Map<PropertyAccessorType, WeaklyTypeReferencingMethod<?, ?>> accessors,
                             boolean declaredAsHavingUnmanagedType) {
         this.name = name;
         this.type = type;
@@ -80,7 +80,7 @@ public class NewModelProperty<T> implements Comparable<NewModelProperty<?>> {
         return declaredBy;
     }
 
-    public WeaklyTypeReferencingMethod<?, ?> getAccessor(PropertyAccessorRole role) {
+    public WeaklyTypeReferencingMethod<?, ?> getAccessor(PropertyAccessorType role) {
         return accessors.get(role);
     }
 

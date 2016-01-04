@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.gradle.model.internal.manage.schema.extract.ModelSchemaUtils.getAllMethods;
-import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole.*;
+import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorType.*;
 
 public class NewStructSchemaExtractionStrategy implements ModelSchemaExtractionStrategy {
     private final ModelSchemaAspectExtractor aspectExtractor;
@@ -78,7 +78,7 @@ public class NewStructSchemaExtractionStrategy implements ModelSchemaExtractionS
         Map<String, ModelPropertyExtractionContext> propertiesMap = Maps.newTreeMap();
         for (Map.Entry<Equivalence.Wrapper<Method>, Collection<Method>> entry : allMethods.asMap().entrySet()) {
             Method method = entry.getKey().get();
-            PropertyAccessorRole role = PropertyAccessorRole.of(method);
+            PropertyAccessorType role = PropertyAccessorType.of(method);
             if (role == null) {
                 nonPropertyMethods.add(method);
                 continue;
@@ -105,19 +105,19 @@ public class NewStructSchemaExtractionStrategy implements ModelSchemaExtractionS
 
             ModelType<?> propertyType;
             if (isGetter != null) {
-                if (!isGetter.getType().equals(ModelType.BOOLEAN)) {
+                if (!isGetter.getPropertyType().equals(ModelType.BOOLEAN)) {
                     propertyContext.dropInvalidAccessor(IS_GETTER, nonPropertyMethods);
                 }
             }
 
             if (isGetter != null) {
                 if (getGetter != null) {
-                    if (!getGetter.getType().equals(ModelType.BOOLEAN)) {
+                    if (!getGetter.getPropertyType().equals(ModelType.BOOLEAN)) {
                         if (setter != null) {
-                            if (setter.getType().equals(getGetter.getType())) {
-                                propertyType = setter.getType();
+                            if (setter.getPropertyType().equals(getGetter.getPropertyType())) {
+                                propertyType = setter.getPropertyType();
                                 propertyContext.dropInvalidAccessor(IS_GETTER, nonPropertyMethods);
-                            } else if (setter.getType().equals(ModelType.BOOLEAN)) {
+                            } else if (setter.getPropertyType().equals(ModelType.BOOLEAN)) {
                                 propertyType = ModelType.BOOLEAN;
                                 propertyContext.dropInvalidAccessor(GET_GETTER, nonPropertyMethods);
                             } else {
@@ -131,24 +131,24 @@ public class NewStructSchemaExtractionStrategy implements ModelSchemaExtractionS
                         }
                     } else {
                         propertyType = ModelType.BOOLEAN;
-                        if (setter != null && !setter.getType().equals(ModelType.BOOLEAN)) {
+                        if (setter != null && !setter.getPropertyType().equals(ModelType.BOOLEAN)) {
                             propertyContext.dropInvalidAccessor(SETTER, nonPropertyMethods);
                         }
                     }
                 } else {
                     propertyType = ModelType.BOOLEAN;
-                    if (setter != null && !setter.getType().equals(ModelType.BOOLEAN)) {
+                    if (setter != null && !setter.getPropertyType().equals(ModelType.BOOLEAN)) {
                         propertyContext.dropInvalidAccessor(SETTER, nonPropertyMethods);
                     }
                 }
             } else if (getGetter != null) {
-                propertyType = getGetter.getType();
-                if (setter != null && !setter.getType().equals(propertyType)) {
+                propertyType = getGetter.getPropertyType();
+                if (setter != null && !setter.getPropertyType().equals(propertyType)) {
                     propertyContext.dropInvalidAccessor(SETTER, nonPropertyMethods);
                 }
             } else {
                 assert setter != null;
-                propertyType = setter.getType();
+                propertyType = setter.getPropertyType();
             }
 
             NewModelPropertyExtractionResult<?> propertyResult = createProperty(propertyType, propertyContext);
@@ -157,11 +157,11 @@ public class NewStructSchemaExtractionStrategy implements ModelSchemaExtractionS
     }
 
     private static <P> NewModelPropertyExtractionResult<P> createProperty(ModelType<P> propertyType, ModelPropertyExtractionContext propertyContext) {
-        ImmutableMap.Builder<PropertyAccessorRole, WeaklyTypeReferencingMethod<?, ?>> accessors = ImmutableMap.builder();
+        ImmutableMap.Builder<PropertyAccessorType, WeaklyTypeReferencingMethod<?, ?>> accessors = ImmutableMap.builder();
         for (PropertyAccessorExtractionContext accessor : propertyContext.getAccessors()) {
             Method method = accessor.getMostSpecificDeclaration();
             WeaklyTypeReferencingMethod<?, ?> methodRef = WeaklyTypeReferencingMethod.of(method);
-            accessors.put(accessor.getRole(), methodRef);
+            accessors.put(accessor.getAccessorType(), methodRef);
         }
         NewModelProperty<P> property = new NewModelProperty<P>(
             propertyType,

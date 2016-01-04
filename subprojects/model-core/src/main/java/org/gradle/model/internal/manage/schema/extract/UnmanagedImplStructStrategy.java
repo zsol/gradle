@@ -29,8 +29,8 @@ import org.gradle.model.internal.type.ModelType;
 import java.lang.reflect.Method;
 import java.util.Collection;
 
-import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole.GET_GETTER;
-import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole.IS_GETTER;
+import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorType.GET_GETTER;
+import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorType.IS_GETTER;
 
 public class UnmanagedImplStructStrategy extends StructSchemaExtractionStrategySupport {
 

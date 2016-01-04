@@ -30,11 +30,11 @@ import java.util.Set;
 public class ModelPropertyExtractionContext {
 
     private final String propertyName;
-    private Map<PropertyAccessorRole, PropertyAccessorExtractionContext> accessors;
+    private Map<PropertyAccessorType, PropertyAccessorExtractionContext> accessors;
 
     public ModelPropertyExtractionContext(String propertyName) {
         this.propertyName = propertyName;
-        this.accessors = Maps.newEnumMap(PropertyAccessorRole.class);
+        this.accessors = Maps.newEnumMap(PropertyAccessorType.class);
     }
 
     public String getPropertyName() {
@@ -42,7 +42,7 @@ public class ModelPropertyExtractionContext {
     }
 
     public void addAccessor(PropertyAccessorExtractionContext accessor) {
-        PropertyAccessorRole role = accessor.getRole();
+        PropertyAccessorType role = accessor.getAccessorType();
         // TODO:LPTR What happens when the property has multiple accessors in the same role but with different type?
 //        if (accessors.containsKey(role)) {
 //            throw new IllegalStateException("Accessor already registered: " + role + " " + accessor);
@@ -51,7 +51,7 @@ public class ModelPropertyExtractionContext {
     }
 
     @Nullable
-    public PropertyAccessorExtractionContext getAccessor(PropertyAccessorRole type) {
+    public PropertyAccessorExtractionContext getAccessor(PropertyAccessorType type) {
         return accessors.get(type);
     }
 
@@ -59,7 +59,7 @@ public class ModelPropertyExtractionContext {
         return accessors.values();
     }
 
-    public void dropInvalidAccessor(PropertyAccessorRole type, ImmutableCollection.Builder<Method> droppedMethods) {
+    public void dropInvalidAccessor(PropertyAccessorType type, ImmutableCollection.Builder<Method> droppedMethods) {
         PropertyAccessorExtractionContext removedAccessor = accessors.remove(type);
         if (removedAccessor != null) {
             droppedMethods.add(removedAccessor.getMostSpecificDeclaration());
@@ -77,8 +77,8 @@ public class ModelPropertyExtractionContext {
     }
 
     public boolean isDeclaredAsUnmanaged() {
-        return isDeclaredAsUnmanaged(getAccessor(PropertyAccessorRole.GET_GETTER))
-            || isDeclaredAsUnmanaged(getAccessor(PropertyAccessorRole.IS_GETTER));
+        return isDeclaredAsUnmanaged(getAccessor(PropertyAccessorType.GET_GETTER))
+            || isDeclaredAsUnmanaged(getAccessor(PropertyAccessorType.IS_GETTER));
     }
 
     private boolean isDeclaredAsUnmanaged(PropertyAccessorExtractionContext accessor) {
@@ -95,13 +95,13 @@ public class ModelPropertyExtractionContext {
 
     @Nullable
     public PropertyAccessorExtractionContext mergeGetters() {
-        PropertyAccessorExtractionContext getGetter = getAccessor(PropertyAccessorRole.GET_GETTER);
-        PropertyAccessorExtractionContext isGetter = getAccessor(PropertyAccessorRole.IS_GETTER);
+        PropertyAccessorExtractionContext getGetter = getAccessor(PropertyAccessorType.GET_GETTER);
+        PropertyAccessorExtractionContext isGetter = getAccessor(PropertyAccessorType.IS_GETTER);
         if (getGetter == null && isGetter == null) {
             return null;
         }
         Iterable<Method> getMethods = getGetter != null ? getGetter.getDeclaringMethods() : Collections.<Method>emptyList();
         Iterable<Method> isMethods = isGetter != null ? isGetter.getDeclaringMethods() : Collections.<Method>emptyList();
-        return new PropertyAccessorExtractionContext(PropertyAccessorRole.GET_GETTER, Iterables.concat(getMethods, isMethods));
+        return new PropertyAccessorExtractionContext(PropertyAccessorType.GET_GETTER, Iterables.concat(getMethods, isMethods));
     }
 }

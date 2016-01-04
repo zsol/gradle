@@ -30,8 +30,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole.GET_GETTER;
-import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole.IS_GETTER;
+import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorType.GET_GETTER;
+import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorType.IS_GETTER;
 
 public abstract class StructSchemaExtractionStrategySupport implements ModelSchemaExtractionStrategy {
 
@@ -79,7 +79,7 @@ public abstract class StructSchemaExtractionStrategySupport implements ModelSche
         Map<String, ModelPropertyExtractionContext> propertiesMap = Maps.newTreeMap();
         for (Map.Entry<Equivalence.Wrapper<Method>, Collection<Method>> entry : candidateMethods.allMethods().entrySet()) {
             Method method = entry.getKey().get();
-            PropertyAccessorRole role = PropertyAccessorRole.of(method);
+            PropertyAccessorType role = PropertyAccessorType.of(method);
             Collection<Method> methodsWithEqualSignature = entry.getValue();
             if (role == null) {
                 handleNonPropertyMethod(context, methodsWithEqualSignature);
@@ -145,7 +145,7 @@ public abstract class StructSchemaExtractionStrategySupport implements ModelSche
         final ModelType<R> returnType = ModelType.returnType(gettersContext.getMostSpecificDeclaration());
 
         WeaklyTypeReferencingMethod<?, Void> setterRef;
-        PropertyAccessorExtractionContext setterContext = property.getAccessor(PropertyAccessorRole.SETTER);
+        PropertyAccessorExtractionContext setterContext = property.getAccessor(PropertyAccessorType.SETTER);
         if (setterContext != null) {
             Method mostSpecificDeclaration = setterContext.getMostSpecificDeclaration();
             setterRef = WeaklyTypeReferencingMethod.of(ModelType.of(mostSpecificDeclaration.getDeclaringClass()), ModelType.of(void.class), mostSpecificDeclaration);

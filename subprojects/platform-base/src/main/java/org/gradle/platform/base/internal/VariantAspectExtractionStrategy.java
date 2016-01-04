@@ -59,7 +59,7 @@ public class VariantAspectExtractionStrategy implements ModelSchemaAspectExtract
             NewModelProperty<?> property = propertyResult.getProperty();
             for (PropertyAccessorExtractionContext accessor : propertyResult.getAccessors()) {
                 // Annotations on setters are silently ignored
-                if (accessor.getRole() == PropertyAccessorRole.SETTER) {
+                if (accessor.getAccessorType() == PropertyAccessorType.SETTER) {
                     continue;
                 }
                 if (accessor.isAnnotationPresent(Variant.class)) {
