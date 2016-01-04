@@ -23,14 +23,14 @@ import org.gradle.internal.Cast;
 import org.gradle.internal.UncheckedException;
 import org.gradle.internal.typeconversion.TypeConverter;
 import org.gradle.model.internal.manage.schema.NewStructSchema;
-import org.gradle.model.internal.manage.schema.extract.NewManagedProxyClassGenerator;
+import org.gradle.model.internal.manage.schema.extract.ManagedProxyClassGenerator;
 import org.gradle.model.internal.type.ModelType;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class NewManagedProxyFactory {
-    private final NewManagedProxyClassGenerator proxyClassGenerator = new NewManagedProxyClassGenerator();
+public class ManagedProxyFactory {
+    private final ManagedProxyClassGenerator proxyClassGenerator = new ManagedProxyClassGenerator();
     private final LoadingCache<CacheKey<?>, Class<?>> generatedImplementationTypes = CacheBuilder.newBuilder()
         .weakValues()
         .build(new CacheLoader<CacheKey<?>, Class<?>>() {

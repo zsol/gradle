@@ -47,7 +47,7 @@ import java.util.Set;
 import static org.gradle.model.internal.manage.schema.extract.PropertyAccessorType.*;
 import static org.objectweb.asm.Opcodes.*;
 
-public class NewManagedProxyClassGenerator extends AbstractProxyClassGenerator {
+public class ManagedProxyClassGenerator extends AbstractProxyClassGenerator {
     /*
         Note: there is deliberately no internal synchronizing or caching at this level.
         Class generation should be performed behind a ManagedProxyFactory.

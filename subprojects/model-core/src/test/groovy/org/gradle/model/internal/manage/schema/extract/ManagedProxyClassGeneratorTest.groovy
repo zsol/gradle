@@ -34,8 +34,8 @@ import org.gradle.model.internal.type.ModelType
 import org.gradle.util.Matchers
 import spock.lang.Unroll
 
-class NewManagedProxyClassGeneratorTest extends ProjectRegistrySpec {
-    static def generator = new NewManagedProxyClassGenerator()
+class ManagedProxyClassGeneratorTest extends ProjectRegistrySpec {
+    static def generator = new ManagedProxyClassGenerator()
     static Map<List<?>, Class<?>> generated = [:]
 
     @Override

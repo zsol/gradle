@@ -66,7 +66,7 @@ import org.gradle.model.internal.inspect.MethodModelRuleExtractors;
 import org.gradle.model.internal.inspect.ModelRuleExtractor;
 import org.gradle.model.internal.inspect.ModelRuleSourceDetector;
 import org.gradle.model.internal.manage.instance.ManagedStructBindingStore;
-import org.gradle.model.internal.manage.instance.NewManagedProxyFactory;
+import org.gradle.model.internal.manage.instance.ManagedProxyFactory;
 import org.gradle.model.internal.manage.schema.ModelSchemaStore;
 import org.gradle.model.internal.manage.schema.extract.*;
 
@@ -204,7 +204,7 @@ public class GlobalScopeServices {
         return new DefaultFileLookup(fileSystem, patternSetFactory);
     }
 
-    ModelRuleExtractor createModelRuleInspector(ServiceRegistry services, ModelSchemaStore modelSchemaStore, NewManagedProxyFactory managedProxyFactory, ManagedStructBindingStore bindingStore) {
+    ModelRuleExtractor createModelRuleInspector(ServiceRegistry services, ModelSchemaStore modelSchemaStore, ManagedProxyFactory managedProxyFactory, ManagedStructBindingStore bindingStore) {
         List<MethodModelRuleExtractor> extractors = services.getAll(MethodModelRuleExtractor.class);
         List<MethodModelRuleExtractor> coreExtractors = MethodModelRuleExtractors.coreExtractors(modelSchemaStore);
         return new ModelRuleExtractor(Iterables.concat(coreExtractors, extractors), managedProxyFactory, modelSchemaStore, bindingStore);
@@ -229,8 +229,8 @@ public class GlobalScopeServices {
         return new ModelSchemaAspectExtractor(strategies);
     }
 
-    protected NewManagedProxyFactory createManagedProxyFactory() {
-        return new NewManagedProxyFactory();
+    protected ManagedProxyFactory createManagedProxyFactory() {
+        return new ManagedProxyFactory();
     }
 
     protected ModelSchemaExtractor createModelSchemaExtractor(ModelSchemaAspectExtractor aspectExtractor, ServiceRegistry serviceRegistry) {

@@ -24,7 +24,7 @@ import org.gradle.internal.typeconversion.TypeConverter;
 import org.gradle.model.internal.core.*;
 import org.gradle.model.internal.core.rule.describe.ModelRuleDescriptor;
 import org.gradle.model.internal.manage.instance.ManagedStructBindingStore;
-import org.gradle.model.internal.manage.instance.NewManagedProxyFactory;
+import org.gradle.model.internal.manage.instance.ManagedProxyFactory;
 import org.gradle.model.internal.manage.projection.StructProjection;
 import org.gradle.model.internal.manage.schema.*;
 import org.gradle.model.internal.type.ModelType;
@@ -49,13 +49,13 @@ public class StructNodeInitializer<T> implements NodeInitializer {
         return ImmutableSetMultimap.<ModelActionRole, ModelAction>builder()
             .put(ModelActionRole.Discover, DirectNodeInputUsingModelAction.of(subject, descriptor,
                 Arrays.<ModelReference<?>>asList(
-                    ModelReference.of(NewManagedProxyFactory.class),
+                    ModelReference.of(ManagedProxyFactory.class),
                     ModelReference.of(TypeConverter.class)
                 ),
                 new BiAction<MutableModelNode, List<ModelView<?>>>() {
                     @Override
                     public void execute(MutableModelNode modelNode, List<ModelView<?>> modelViews) {
-                        NewManagedProxyFactory proxyFactory = getInstance(modelViews.get(0), NewManagedProxyFactory.class);
+                        ManagedProxyFactory proxyFactory = getInstance(modelViews.get(0), ManagedProxyFactory.class);
                         TypeConverter typeConverter = getInstance(modelViews, 1, TypeConverter.class);
                         for (NewStructSchema<?> viewSchema : bindings.getAllViewSchemas()) {
                             addProjection(modelNode, viewSchema, proxyFactory, typeConverter);
@@ -67,7 +67,7 @@ public class StructNodeInitializer<T> implements NodeInitializer {
                 Arrays.<ModelReference<?>>asList(
                     ModelReference.of(ModelSchemaStore.class),
                     ModelReference.of(NodeInitializerRegistry.class),
-                    ModelReference.of(NewManagedProxyFactory.class),
+                    ModelReference.of(ManagedProxyFactory.class),
                     ModelReference.of(TypeConverter.class)
                 ),
                 new BiAction<MutableModelNode, List<ModelView<?>>>() {
@@ -75,7 +75,7 @@ public class StructNodeInitializer<T> implements NodeInitializer {
                     public void execute(MutableModelNode modelNode, List<ModelView<?>> modelViews) {
                         ModelSchemaStore schemaStore = getInstance(modelViews, 0, ModelSchemaStore.class);
                         NodeInitializerRegistry nodeInitializerRegistry = getInstance(modelViews, 1, NodeInitializerRegistry.class);
-                        NewManagedProxyFactory proxyFactory = getInstance(modelViews, 2, NewManagedProxyFactory.class);
+                        ManagedProxyFactory proxyFactory = getInstance(modelViews, 2, ManagedProxyFactory.class);
                         TypeConverter typeConverter = getInstance(modelViews, 3, TypeConverter.class);
 
                         addPropertyLinks(modelNode, schemaStore, nodeInitializerRegistry, proxyFactory, bindings.getGeneratedProperties(), typeConverter);
@@ -89,14 +89,14 @@ public class StructNodeInitializer<T> implements NodeInitializer {
     protected void initializePrivateData(MutableModelNode modelNode) {
     }
 
-    private <V> void addProjection(MutableModelNode modelNode, NewStructSchema<V> viewSchema, NewManagedProxyFactory proxyFactory, TypeConverter typeConverter) {
+    private <V> void addProjection(MutableModelNode modelNode, NewStructSchema<V> viewSchema, ManagedProxyFactory proxyFactory, TypeConverter typeConverter) {
         modelNode.addProjection(new StructProjection<V>(viewSchema, bindings, proxyFactory, typeConverter));
     }
 
     protected void addPropertyLinks(MutableModelNode modelNode,
                                     ModelSchemaStore schemaStore,
                                     NodeInitializerRegistry nodeInitializerRegistry,
-                                    NewManagedProxyFactory proxyFactory,
+                                    ManagedProxyFactory proxyFactory,
                                     Map<String, ManagedStructBindingStore.GeneratedProperty> properties,
                                     TypeConverter typeConverter) {
         for (ManagedStructBindingStore.GeneratedProperty property : properties.values()) {
@@ -123,7 +123,7 @@ public class StructNodeInitializer<T> implements NodeInitializer {
                                      ModelType<P> propertyType,
                                      ModelSchemaStore schemaStore,
                                      NodeInitializerRegistry nodeInitializerRegistry,
-                                     NewManagedProxyFactory proxyFactory,
+                                     ManagedProxyFactory proxyFactory,
                                      TypeConverter typeConverter) {
         ModelSchema<P> propertySchema = schemaStore.getSchema(propertyType);
 

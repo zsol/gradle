@@ -38,7 +38,7 @@ import org.gradle.model.internal.core.rule.describe.ModelRuleDescriptor;
 import org.gradle.model.internal.manage.instance.GeneratedViewState;
 import org.gradle.model.internal.manage.instance.ManagedInstance;
 import org.gradle.model.internal.manage.instance.ManagedStructBindingStore;
-import org.gradle.model.internal.manage.instance.NewManagedProxyFactory;
+import org.gradle.model.internal.manage.instance.ManagedProxyFactory;
 import org.gradle.model.internal.manage.schema.*;
 import org.gradle.model.internal.manage.schema.extract.ModelSchemaUtils;
 import org.gradle.model.internal.method.WeaklyTypeReferencingMethod;
@@ -61,11 +61,11 @@ public class ModelRuleExtractor {
             });
 
     private final Iterable<MethodModelRuleExtractor> handlers;
-    private final NewManagedProxyFactory proxyFactory;
+    private final ManagedProxyFactory proxyFactory;
     private final ModelSchemaStore schemaStore;
     private final ManagedStructBindingStore bindingStore;
 
-    public ModelRuleExtractor(Iterable<MethodModelRuleExtractor> handlers, NewManagedProxyFactory proxyFactory, ModelSchemaStore schemaStore, ManagedStructBindingStore bindingStore) {
+    public ModelRuleExtractor(Iterable<MethodModelRuleExtractor> handlers, ManagedProxyFactory proxyFactory, ModelSchemaStore schemaStore, ManagedStructBindingStore bindingStore) {
         this.handlers = handlers;
         this.proxyFactory = proxyFactory;
         this.schemaStore = schemaStore;
@@ -281,10 +281,10 @@ public class ModelRuleExtractor {
 
     private static class AbstractRuleSourceFactory<T> implements Factory<T>, GeneratedViewState {
         private final NewStructSchema<T> schema;
-        private final NewManagedProxyFactory proxyFactory;
+        private final ManagedProxyFactory proxyFactory;
         private final ManagedStructBindingStore.ManagedStructBinding<?> binding;
 
-        public AbstractRuleSourceFactory(NewStructSchema<T> schema, ManagedStructBindingStore.ManagedStructBinding<?> binding, NewManagedProxyFactory proxyFactory) {
+        public AbstractRuleSourceFactory(NewStructSchema<T> schema, ManagedStructBindingStore.ManagedStructBinding<?> binding, ManagedProxyFactory proxyFactory) {
             this.schema = schema;
             this.binding = binding;
             this.proxyFactory = proxyFactory;
@@ -335,9 +335,9 @@ public class ModelRuleExtractor {
         private final List<NewModelProperty<?>> implicitInputs;
         private final NewStructSchema<?> schema;
         private final ManagedStructBindingStore.ManagedStructBinding<?> binding;
-        private final NewManagedProxyFactory proxyFactory;
+        private final ManagedProxyFactory proxyFactory;
 
-        public <T> ParameterizedRuleSource(List<ExtractedRuleDetails> rules, @Nullable NewModelProperty<?> target, List<NewModelProperty<?>> implicitInputs, NewStructSchema<T> schema, ManagedStructBindingStore.ManagedStructBinding<?> binding, NewManagedProxyFactory proxyFactory) {
+        public <T> ParameterizedRuleSource(List<ExtractedRuleDetails> rules, @Nullable NewModelProperty<?> target, List<NewModelProperty<?>> implicitInputs, NewStructSchema<T> schema, ManagedStructBindingStore.ManagedStructBinding<?> binding, ManagedProxyFactory proxyFactory) {
             this.rules = rules;
             this.target = target;
             this.implicitInputs = implicitInputs;
@@ -493,10 +493,10 @@ public class ModelRuleExtractor {
         private final List<NewModelProperty<?>> implicitInputs;
         private final NewStructSchema<T> schema;
         private final ManagedStructBindingStore.ManagedStructBinding<?> binding;
-        private final NewManagedProxyFactory proxyFactory;
+        private final ManagedProxyFactory proxyFactory;
         private final Map<String, Object> values = new HashMap<String, Object>();
 
-        public ParameterizedExtractedRuleSource(List<ExtractedRuleDetails> rules, @Nullable NewModelProperty<?> targetProperty, List<NewModelProperty<?>> implicitInputs, NewStructSchema<T> schema, ManagedStructBindingStore.ManagedStructBinding<?> binding, NewManagedProxyFactory proxyFactory) {
+        public ParameterizedExtractedRuleSource(List<ExtractedRuleDetails> rules, @Nullable NewModelProperty<?> targetProperty, List<NewModelProperty<?>> implicitInputs, NewStructSchema<T> schema, ManagedStructBindingStore.ManagedStructBinding<?> binding, ManagedProxyFactory proxyFactory) {
             super(rules);
             this.targetProperty = targetProperty;
             this.implicitInputs = implicitInputs;

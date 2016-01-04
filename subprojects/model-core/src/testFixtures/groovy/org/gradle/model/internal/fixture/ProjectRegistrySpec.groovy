@@ -23,7 +23,7 @@ import org.gradle.model.internal.core.ModelRegistrations
 import org.gradle.model.internal.core.NodeInitializerRegistry
 import org.gradle.model.internal.inspect.ModelRuleExtractor
 import org.gradle.model.internal.manage.instance.ManagedStructBindingStore
-import org.gradle.model.internal.manage.instance.NewManagedProxyFactory
+import org.gradle.model.internal.manage.instance.ManagedProxyFactory
 import org.gradle.model.internal.manage.schema.ModelSchemaStore
 import org.gradle.model.internal.registry.ModelRegistry
 import org.gradle.util.TestUtil
@@ -32,7 +32,7 @@ import spock.lang.Specification
 @SuppressWarnings("GrMethodMayBeStatic")
 class ProjectRegistrySpec extends Specification {
     public static final ModelSchemaStore SCHEMA_STORE
-    public static final NewManagedProxyFactory MANAGED_PROXY_FACTORY
+    public static final ManagedProxyFactory MANAGED_PROXY_FACTORY
     public static final ModelRuleExtractor MODEL_RULE_EXTRACTOR
     public static final NodeInitializerRegistry NODE_INITIALIZER_REGISTRY
     public static final ManagedStructBindingStore BINDING_STORE
@@ -40,7 +40,7 @@ class ProjectRegistrySpec extends Specification {
     static {
         def services = TestUtil.createRootProject().services
         SCHEMA_STORE = services.get(ModelSchemaStore)
-        MANAGED_PROXY_FACTORY = services.get(NewManagedProxyFactory)
+        MANAGED_PROXY_FACTORY = services.get(ManagedProxyFactory)
         MODEL_RULE_EXTRACTOR = services.get(ModelRuleExtractor)
         BINDING_STORE = new ManagedStructBindingStore()
         NODE_INITIALIZER_REGISTRY = new DefaultNodeInitializerRegistry(SCHEMA_STORE, BINDING_STORE)
@@ -48,7 +48,7 @@ class ProjectRegistrySpec extends Specification {
 
     ModelRegistry registry = createModelRegistry()
     ModelSchemaStore schemaStore = SCHEMA_STORE
-    NewManagedProxyFactory proxyFactory = MANAGED_PROXY_FACTORY
+    ManagedProxyFactory proxyFactory = MANAGED_PROXY_FACTORY
     ModelRuleExtractor modelRuleExtractor = MODEL_RULE_EXTRACTOR
     ManagedStructBindingStore bindingStore = createBindingStore()
     TypeConverter typeConverter = createTypeConverter()
@@ -56,7 +56,7 @@ class ProjectRegistrySpec extends Specification {
 
     def setup() {
         registerService "schemaStore", ModelSchemaStore, schemaStore
-        registerService "proxyFactory", NewManagedProxyFactory, proxyFactory
+        registerService "proxyFactory", ManagedProxyFactory, proxyFactory
         registerService "serviceRegistry", ServiceRegistry, Mock(ServiceRegistry)
         registerService "typeConverter", TypeConverter, typeConverter
         registerService "structBindingStore", ManagedStructBindingStore, bindingStore
