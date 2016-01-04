@@ -15,12 +15,11 @@
  */
 
 package org.gradle.model.internal.manage.schema.extract
-
 import groovy.transform.CompileStatic
 import org.gradle.model.Managed
 import org.gradle.model.ModelSet
-import org.gradle.model.internal.manage.schema.ManagedImplStructSchema
 import org.gradle.model.internal.manage.schema.ModelSchema
+import org.gradle.model.internal.manage.schema.NewStructSchema
 import org.gradle.model.internal.type.ModelType
 import org.gradle.test.fixtures.ConcurrentTestUtil
 import org.gradle.test.fixtures.concurrent.ConcurrentSpec
@@ -113,7 +112,7 @@ class DefaultModelSchemaStoreTest extends ConcurrentSpec {
 
     @CompileStatic
     // must be compile static to avoid call sites being created with soft class refs
-    private static void forcefullyClearReferences(ManagedImplStructSchema schema) {
+    private static void forcefullyClearReferences(NewStructSchema<?> schema) {
         // Remove strong internal circular ref
         (schema.type.rawClass.classLoader as GroovyClassLoader).clearCache()
 

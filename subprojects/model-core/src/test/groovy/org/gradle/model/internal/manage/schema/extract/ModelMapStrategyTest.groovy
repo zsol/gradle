@@ -16,10 +16,7 @@
 
 package org.gradle.model.internal.manage.schema.extract
 
-import org.gradle.model.internal.manage.schema.CompositeSchema
-import org.gradle.model.internal.manage.schema.ManagedImplSchema
-import org.gradle.model.internal.manage.schema.ModelMapSchema
-import org.gradle.model.internal.manage.schema.StructSchema
+import org.gradle.model.internal.manage.schema.NewStructSchema
 import org.gradle.model.internal.type.ModelType
 import org.gradle.model.internal.type.ModelTypes
 import spock.lang.Specification
@@ -29,12 +26,8 @@ class ModelMapStrategyTest extends Specification {
 
     def "assembles schema for model map"() {
         expect:
-        def schema = store.getSchema(ModelTypes.modelMap(String))
-        schema instanceof ModelMapSchema
-        schema instanceof ManagedImplSchema
-        schema instanceof CompositeSchema
-        !(schema instanceof StructSchema)
-        schema.elementType == ModelType.of(String)
-        schema.elementTypeSchema == store.getSchema(ModelType.of(String))
+        def schema = store.getSchema(ModelTypes.list(ModelType.of(Runnable)))
+        schema instanceof NewStructSchema
+        schema.propertyNames == ['empty'] as SortedSet
     }
 }

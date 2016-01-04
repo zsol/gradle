@@ -32,7 +32,12 @@ public class NewStructSchema<T> extends AbstractModelSchema<T> implements Compos
     private final Set<WeaklyTypeReferencingMethod<?, ?>> nonPropertyMethods;
     private final Set<? extends ModelSchemaAspect> aspects;
 
-    public NewStructSchema(ModelType<T> type, Map<String, NewModelProperty<?>> properties, Iterable<WeaklyTypeReferencingMethod<?, ?>> nonPropertyMethods, Iterable<? extends ModelSchemaAspect> aspects) {
+    public NewStructSchema(
+        ModelType<T> type,
+        Map<String, NewModelProperty<?>> properties,
+        Iterable<WeaklyTypeReferencingMethod<?, ?>> nonPropertyMethods,
+        Iterable<? extends ModelSchemaAspect> aspects
+    ) {
         super(type);
         this.properties = ImmutableSortedMap.copyOf(properties);
         this.nonPropertyMethods = ImmutableSortedSet.copyOf(weakMethodOrder(), nonPropertyMethods);

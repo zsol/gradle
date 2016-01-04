@@ -68,7 +68,8 @@ import org.gradle.model.RuleSource;
 import org.gradle.model.dsl.internal.NonTransformedModelDslBacking;
 import org.gradle.model.dsl.internal.TransformedModelDslBacking;
 import org.gradle.model.internal.core.*;
-import org.gradle.model.internal.manage.instance.ManagedProxyFactory;
+import org.gradle.model.internal.manage.instance.ManagedStructBindingStore;
+import org.gradle.model.internal.manage.instance.NewManagedProxyFactory;
 import org.gradle.model.internal.manage.schema.ModelSchemaStore;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.process.ExecResult;
@@ -201,13 +202,18 @@ public abstract class AbstractProject extends AbstractPluginAware implements Pro
         }
 
         @Hidden @Model
-        ManagedProxyFactory proxyFactory(ServiceRegistry serviceRegistry) {
-            return serviceRegistry.get(ManagedProxyFactory.class);
+        ManagedStructBindingStore bindingStore(ServiceRegistry serviceRegistry) {
+            return serviceRegistry.get(ManagedStructBindingStore.class);
         }
 
         @Hidden @Model
-        NodeInitializerRegistry nodeInitializerRegistry(ModelSchemaStore schemaStore) {
-            return new DefaultNodeInitializerRegistry(schemaStore);
+        NewManagedProxyFactory proxyFactory(ServiceRegistry serviceRegistry) {
+            return serviceRegistry.get(NewManagedProxyFactory.class);
+        }
+
+        @Hidden @Model
+        NodeInitializerRegistry nodeInitializerRegistry(ModelSchemaStore schemaStore, ManagedStructBindingStore bindingStore) {
+            return new DefaultNodeInitializerRegistry(schemaStore, bindingStore);
         }
 
         @Hidden @Model

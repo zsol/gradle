@@ -26,6 +26,7 @@ import org.gradle.model.internal.manage.schema.extract.PropertyAccessorRole;
 import org.gradle.model.internal.method.WeaklyTypeReferencingMethod;
 import org.gradle.model.internal.type.ModelType;
 
+import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Set;
 
@@ -100,6 +101,15 @@ public class NewModelProperty<T> implements Comparable<NewModelProperty<?>> {
 
     public boolean isDeclaredAsHavingUnmanagedType() {
         return declaredAsHavingUnmanagedType;
+    }
+
+    public boolean isAnnotationPresent(Class<? extends Annotation> annotation) {
+        for (WeaklyTypeReferencingMethod<?, ?> weakAccessor : accessors.values()) {
+            if (weakAccessor.getMethod().isAnnotationPresent(annotation)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -31,72 +31,67 @@ import spock.lang.Unroll
 import java.beans.Introspector
 import java.util.regex.Pattern
 
-import static org.gradle.model.internal.manage.schema.ModelProperty.StateManagementType.MANAGED
-import static org.gradle.model.internal.manage.schema.ModelProperty.StateManagementType.UNMANAGED
-
 @SuppressWarnings("GroovyPointlessBoolean")
 class DefaultModelSchemaExtractorTest extends Specification {
     def store = new DefaultModelSchemaStore(DefaultModelSchemaExtractor.withDefaultStrategies())
     def classLoader = new GroovyClassLoader(getClass().classLoader)
-    static final List<Class<? extends Serializable>> JDK_SCALAR_TYPES = ScalarTypes.TYPES.rawClass
+    static final List<Class<? extends Serializable>> JDK_SCALAR_TYPES = ScalarTypes.TYPES.concreteClass
 
     static interface NotAnnotatedInterface {}
 
     def "unmanaged type"() {
         expect:
-        extract(NotAnnotatedInterface) instanceof UnmanagedImplStructSchema
+        extract(NotAnnotatedInterface) instanceof NewStructSchema
     }
 
-    @Managed
     static class EmptyStaticClass {}
 
-    def "must be interface"() {
-        when:
-        extract(EmptyStaticClass)
-
-        then:
-        def e = thrown(InvalidManagedModelElementTypeException)
-        e.message == """Type $EmptyStaticClass.name is not a valid model element type:
-- Must be defined as an interface or an abstract class."""
+    def "concrete class"() {
+        def schema = extract(NotAnnotatedInterface)
+        expect:
+        assert schema instanceof NewStructSchema
+        schema.properties.isEmpty()
+        schema.nonPropertyMethods.isEmpty()
     }
 
-    @Managed
     static interface ParameterizedEmptyInterface<T> {}
 
-    def "cannot parameterize"() {
-        when:
-        extract(ParameterizedEmptyInterface)
-
-        then:
-        def e = thrown(InvalidManagedModelElementTypeException)
-        e.message == """Type $ParameterizedEmptyInterface.name is not a valid model element type:
-- Cannot be a parameterized type."""
+    def "parameterized type"() {
+        def schema = extract ParameterizedEmptyInterface
+        expect:
+        assert schema instanceof NewStructSchema
+        schema.properties.isEmpty()
+        schema.nonPropertyMethods.isEmpty()
     }
 
-    @Managed
     static interface NoGettersOrSetters {
         void foo(String bar)
     }
 
-    @Managed
+    def "no properties but methods"() {
+        def schema = extract NoGettersOrSetters
+        expect:
+        assert schema instanceof NewStructSchema
+        schema.properties.isEmpty()
+        schema.nonPropertyMethods*.name as List == ["foo"]
+    }
+
     static interface HasExtraNonPropertyMethods {
         String getName()
-
         void setName(String name)
-
         void foo(String bar)
     }
 
-    def "can only have getters and setters"() {
+    def "properties and methods"() {
+        def schema = extract HasExtraNonPropertyMethods
         expect:
-        fail NoGettersOrSetters, Pattern.quote("only paired getter/setter methods are supported (invalid methods: ${MethodDescription.name("foo").returns(void.class).owner(NoGettersOrSetters).takes(String)})")
-        fail HasExtraNonPropertyMethods, Pattern.quote("nly paired getter/setter methods are supported (invalid methods: ${MethodDescription.name("foo").returns(void.class).owner(HasExtraNonPropertyMethods).takes(String)})")
+        assert schema instanceof NewStructSchema
+        schema.properties*.name as List == ["name"]
+        schema.nonPropertyMethods*.name as List == ["foo"]
     }
 
-    @Managed
     static interface SingleStringNameProperty {
         String getName()
-
         void setName(String name)
     }
 
@@ -112,73 +107,78 @@ class DefaultModelSchemaExtractorTest extends Specification {
     @Managed
     static interface GetterWithParams {
         String getName(String name)
-
         void setName(String name)
-
     }
 
     def "malformed getter"() {
+        def schema = extract GetterWithParams
         expect:
-        fail GetterWithParams, "getter methods cannot take parameters"
+        assert schema instanceof NewStructSchema
+        schema.properties*.name as List == ["name"]
+        schema.properties*.readable as List == [false]
+        schema.properties*.writable as List == [true]
+        schema.nonPropertyMethods*.name as List == ["getName"]
     }
 
     @Managed
     static interface NonVoidSetter {
         String getName()
-
         String setName(String name)
     }
 
     def "non void setter"() {
+        def schema = extract NonVoidSetter
         expect:
-        fail NonVoidSetter, "setter method must have void return type"
+        assert schema instanceof NewStructSchema
+        schema.properties*.name as List == ["name"]
+        schema.properties*.readable as List == [true]
+        schema.properties*.writable as List == [false]
+        schema.nonPropertyMethods*.name as List == ["setName"]
     }
 
     @Managed
     static interface SetterWithExtraParams {
         String getName()
-
         void setName(String name, String otherName)
     }
 
     def "setter with extra params"() {
+        def schema = extract SetterWithExtraParams
         expect:
-        fail SetterWithExtraParams, "setter method must have exactly one parameter"
+        assert schema instanceof NewStructSchema
+        schema.properties*.name as List == ["name"]
+        schema.properties*.readable as List == [true]
+        schema.properties*.writable as List == [false]
+        schema.nonPropertyMethods*.name as List == ["setName"]
     }
 
-    @Managed
     static interface MisalignedSetterType {
         String getName()
-
         void setName(Object name)
     }
 
     def "misaligned setter type"() {
+        def schema = extract MisalignedSetterType
         expect:
-        fail MisalignedSetterType, "setter method param must be of exactly the same type"
+        assert schema instanceof NewStructSchema
+        schema.properties*.name as List == ["name"]
+        schema.properties*.readable as List == [true]
+        schema.properties*.writable as List == [false]
+        schema.nonPropertyMethods*.name as List == ["setName"]
     }
 
-    @Managed
     static interface SetterOnly {
         void setName(String name);
     }
 
     def "setter only"() {
+        def schema = extract SetterOnly
         expect:
-        fail SetterOnly, "only paired getter/setter methods are supported"
-    }
-
-    interface SetterOnlyUnmanaged {
-        void setName(String name);
-    }
-
-    def "setter only unmanaged"() {
-        when:
-        def schema = extract(SetterOnlyUnmanaged)
-
-        then:
-        assert schema instanceof UnmanagedImplStructSchema
-        schema.getProperty("name") == null
+        assert schema instanceof NewStructSchema
+        schema.properties*.name as List == ["name"]
+        schema.properties*.readable as List == [false]
+        schema.properties*.writable as List == [true]
+        schema.nonPropertyMethods.isEmpty()
     }
 
     @Unroll
@@ -187,7 +187,6 @@ class DefaultModelSchemaExtractorTest extends Specification {
         def interfaceWithPrimitiveProperty = new GroovyClassLoader(getClass().classLoader).parseClass """
             import org.gradle.model.Managed
 
-            @Managed
             interface PrimitiveProperty {
                 $primitiveType.name getPrimitiveProperty()
 
@@ -219,7 +218,6 @@ class DefaultModelSchemaExtractorTest extends Specification {
         def interfaceWithPrimitiveProperty = new GroovyClassLoader(getClass().classLoader).parseClass """
             import org.gradle.model.Managed
 
-            @Managed
             interface PrimitiveProperty {
                 $firstType.name getPrimitiveProperty()
 
@@ -250,18 +248,12 @@ class DefaultModelSchemaExtractorTest extends Specification {
         Double    | double
     }
 
-    @Managed
     static interface MultipleProps {
         String getProp1();
-
         void setProp1(String string);
-
         String getProp2();
-
         void setProp2(String string);
-
         String getProp3();
-
         void setProp3(String string);
     }
 
@@ -274,7 +266,6 @@ class DefaultModelSchemaExtractorTest extends Specification {
         properties*.type == [ModelType.of(String)] * 3
     }
 
-    @Managed
     interface SelfReferencing {
         SelfReferencing getSelf()
     }
@@ -284,7 +275,6 @@ class DefaultModelSchemaExtractorTest extends Specification {
         extract(SelfReferencing).getProperty("self").type == ModelType.of(SelfReferencing)
     }
 
-    @Managed
     interface HasSingleCharGetter {
         String getA()
         void setA(String a)
@@ -295,9 +285,9 @@ class DefaultModelSchemaExtractorTest extends Specification {
         def schema = store.getSchema(HasSingleCharGetter)
 
         then:
-        schema instanceof ManagedImplSchema
+        schema instanceof NewStructSchema
         def a = schema.properties[0]
-        assert a instanceof ModelProperty
+        assert a instanceof NewModelProperty
         a.name == "a"
     }
 
@@ -355,88 +345,80 @@ class DefaultModelSchemaExtractorTest extends Specification {
         url.name == Introspector.decapitalize('URL')
     }
 
-    @Managed
     interface HasTwoFirstsCharLowercaseGetter {
         String getccCompiler()
         void setccCompiler(String ccCompiler)
     }
 
     def "reject two firsts char lowercase getters"() {
+        def schema = extract HasTwoFirstsCharLowercaseGetter
         expect:
-        fail HasTwoFirstsCharLowercaseGetter, "only paired getter/setter methods are supported"
+        assert schema instanceof NewStructSchema
+        schema.properties.isEmpty()
+        schema.nonPropertyMethods*.name as List == ["getccCompiler", "setccCompiler"]
     }
 
-    @Managed
     interface HasGetGetterLikeMethod {
         String gettingStarted()
     }
 
     def "get-getters-like methods not considered as getters"() {
+        def schema = extract HasGetGetterLikeMethod
         expect:
-        fail HasGetGetterLikeMethod, "only paired getter/setter methods are supported"
+        assert schema instanceof NewStructSchema
+        schema.properties.isEmpty()
+        schema.nonPropertyMethods*.name as List == ["gettingStarted"]
     }
 
-    @Managed
     interface HasIsGetterLikeMethod {
         boolean isidore()
     }
 
     def "is-getters-like methods not considered as getters"() {
+        def schema = extract HasIsGetterLikeMethod
         expect:
-        fail HasIsGetterLikeMethod, "only paired getter/setter methods are supported"
+        assert schema instanceof NewStructSchema
+        schema.properties.isEmpty()
+        schema.nonPropertyMethods*.name as List == ["isidore"]
     }
 
-    @Managed
     interface HasSetterLikeMethod {
         void settings(String settings)
     }
 
     def "setters-like methods not considered as setters"() {
+        def schema = extract HasSetterLikeMethod
         expect:
-        fail HasSetterLikeMethod, "only paired getter/setter methods are supported"
+        assert schema instanceof NewStructSchema
+        schema.properties.isEmpty()
+        schema.nonPropertyMethods*.name as List == ["settings"]
     }
 
-    @Managed
     interface A1 {
         A1 getA();
-
         B1 getB();
-
         C1 getC();
-
         D1 getD();
     }
 
-    @Managed
     interface B1 {
         A1 getA();
-
         B1 getB();
-
         C1 getC();
-
         D1 getD();
     }
 
-    @Managed
     interface C1 {
         A1 getA();
-
         B1 getB();
-
         C1 getC();
-
         D1 getD();
     }
 
-    @Managed
     interface D1 {
         A1 getA();
-
         B1 getB();
-
         C1 getC();
-
         D1 getD();
     }
 
@@ -451,10 +433,8 @@ class DefaultModelSchemaExtractorTest extends Specification {
         type << [A1, B1, C1, D1]
     }
 
-    @Managed
     static interface WithInheritedProperties extends SingleStringNameProperty {
         Integer getCount()
-
         void setCount(Integer count)
     }
 
@@ -466,14 +446,11 @@ class DefaultModelSchemaExtractorTest extends Specification {
         properties*.name == ["count", "name"]
     }
 
-    @Managed
     static interface SingleIntegerValueProperty {
         Integer getValue()
-
         void setValue(Integer count)
     }
 
-    @Managed
     static interface WithMultipleParents extends SingleStringNameProperty, SingleIntegerValueProperty {
     }
 
@@ -487,14 +464,11 @@ class DefaultModelSchemaExtractorTest extends Specification {
 
     static interface SinglePropertyNotAnnotated {
         String getName()
-
         void setName(String name)
     }
 
-    @Managed
     static interface WithInheritedPropertiesFromGrandparent extends WithInheritedProperties {
         Boolean getFlag()
-
         void setFlag(Boolean flag)
     }
 
@@ -508,7 +482,6 @@ class DefaultModelSchemaExtractorTest extends Specification {
 
     static interface WithInheritedPropertiesFromNotAnnotated extends SinglePropertyNotAnnotated {
         Integer getCount()
-
         void setCount(Integer count)
     }
 
@@ -520,24 +493,20 @@ class DefaultModelSchemaExtractorTest extends Specification {
         properties*.name == ["count", "name"]
     }
 
-    @Managed
     static interface SingleStringValueProperty {
         String getValue()
-
         void setValue(String value)
     }
 
-    @Managed
     static interface SingleFloatValueProperty {
         Float getValue()
-
         void setValue(Float value)
     }
 
-    @Managed
     static interface ConflictingPropertiesInParents extends SingleIntegerValueProperty, SingleStringValueProperty, SingleFloatValueProperty {
     }
 
+    @NotYetImplemented
     def "conflicting properties of super types are detected"() {
         given:
         def invalidMethods = [
@@ -551,14 +520,11 @@ class DefaultModelSchemaExtractorTest extends Specification {
         fail ConflictingPropertiesInParents, message
     }
 
-    @Managed
     static interface AnotherSingleStringValueProperty {
         String getValue()
-
         void setValue(String value)
     }
 
-    @Managed
     static interface SamePropertyInMultipleTypes extends SingleStringValueProperty, AnotherSingleStringValueProperty {
     }
 
@@ -570,12 +536,10 @@ class DefaultModelSchemaExtractorTest extends Specification {
         properties*.name == ["value"]
     }
 
-    @Managed
     static interface ReadOnlyProperty {
         SingleStringValueProperty getSingleStringValueProperty()
     }
 
-    @Managed
     static interface WritableProperty extends ReadOnlyProperty {
         void setSingleStringValueProperty(SingleStringValueProperty value)
     }
@@ -588,13 +552,15 @@ class DefaultModelSchemaExtractorTest extends Specification {
         properties*.writable == [true]
     }
 
-    @Managed
     static interface ChildWithNoGettersOrSetters extends NoGettersOrSetters {
     }
 
     def "invalid methods of super types are reported"() {
+        def schema = extract ChildWithNoGettersOrSetters
         expect:
-        fail ChildWithNoGettersOrSetters, Pattern.quote("only paired getter/setter methods are supported (invalid methods: ${MethodDescription.name("foo").returns(void.class).owner(NoGettersOrSetters).takes(String)})")
+        assert schema instanceof NewStructSchema
+        schema.properties.isEmpty()
+        schema.nonPropertyMethods*.name as List == ["foo"]
     }
 
     def "type argument of a model set has to be specified"() {
@@ -1090,7 +1056,7 @@ interface Managed${typeName} {
         def schema = extract(SimpleUnmanagedType)
 
         then:
-        assert schema instanceof UnmanagedImplStructSchema
+        assert schema instanceof NewStructSchema
         schema.getProperty("prop").getPropertyValue(instance) == "12"
         schema.getProperty("calculatedProp").getPropertyValue(instance) == "calc"
     }
@@ -1117,16 +1083,12 @@ interface Managed${typeName} {
         def schema = extract(SimpleUnmanagedTypeWithAnnotations)
 
         then:
-        assert schema instanceof UnmanagedImplStructSchema
+        assert schema instanceof NewStructSchema
         schema.properties*.name == ["buildable", "time", "unmanagedCalculatedProp", "unmanagedProp"]
 
-        schema.getProperty("unmanagedProp").stateManagementType == UNMANAGED
         schema.getProperty("unmanagedProp").isWritable() == true
-        schema.getProperty("unmanagedCalculatedProp").stateManagementType == UNMANAGED
         schema.getProperty("unmanagedCalculatedProp").isWritable() == false
-        schema.getProperty("buildable").stateManagementType == UNMANAGED
         schema.getProperty("buildable").isWritable() == false
-        schema.getProperty("time").stateManagementType == UNMANAGED
         schema.getProperty("time").isWritable() == false
     }
 
@@ -1167,25 +1129,14 @@ interface Managed${typeName} {
         def schema = store.getSchema(ManagedTypeWithAnnotationsExtendingUnmanagedType)
 
         then:
-        assert schema instanceof ManagedImplStructSchema
+        assert schema instanceof NewStructSchema
         schema.properties*.name == ["buildable", "managedCalculatedProp", "managedProp", "time", "unmanagedCalculatedProp", "unmanagedProp"]
 
-        schema.getProperty("unmanagedProp").stateManagementType == UNMANAGED
         schema.getProperty("unmanagedProp").isWritable() == true
-
-        schema.getProperty("unmanagedCalculatedProp").stateManagementType == UNMANAGED
         schema.getProperty("unmanagedCalculatedProp").isWritable() == false
-
-        schema.getProperty("managedProp").stateManagementType == MANAGED
         schema.getProperty("managedProp").isWritable() == true
-
-        schema.getProperty("managedCalculatedProp").stateManagementType == UNMANAGED
         schema.getProperty("managedCalculatedProp").isWritable() == false
-
-        schema.getProperty("buildable").stateManagementType == UNMANAGED
         schema.getProperty("buildable").isWritable() == false
-
-        schema.getProperty("time").stateManagementType == UNMANAGED
         schema.getProperty("time").isWritable() == false
     }
 
@@ -1208,13 +1159,10 @@ interface Managed${typeName} {
         def schema = extract(SimplePurelyManagedType)
 
         then:
-        assert schema instanceof ManagedImplStructSchema
+        assert schema instanceof NewStructSchema
         schema.properties*.name == ["managedCalculatedProp", "managedProp"]
 
-        schema.getProperty("managedProp").stateManagementType == MANAGED
         schema.getProperty("managedProp").isWritable() == true
-
-        schema.getProperty("managedCalculatedProp").stateManagementType == UNMANAGED
         schema.getProperty("managedCalculatedProp").isWritable() == false
     }
 
@@ -1235,13 +1183,11 @@ interface Managed${typeName} {
         def schema = extract(OverridingManagedSubtype)
 
         then:
-        assert schema instanceof ManagedImplStructSchema
+        assert schema instanceof NewStructSchema
         schema.properties*.name == ["managedCalculatedProp", "managedProp"]
 
-        schema.getProperty("managedProp").stateManagementType == MANAGED
         schema.getProperty("managedProp").isWritable() == true
 
-        schema.getProperty("managedCalculatedProp").stateManagementType == UNMANAGED
         schema.getProperty("managedCalculatedProp").isWritable() == false
     }
 
@@ -1407,10 +1353,9 @@ interface Managed${typeName} {
         def schema = extract(managedType)
 
         then:
-        assert schema instanceof ManagedImplStructSchema
+        assert schema instanceof NewStructSchema
         schema.properties*.name == ["items"]
 
-        schema.getProperty("items").stateManagementType == MANAGED
         schema.getProperty("items").isWritable() == false
 
         where:
@@ -1433,10 +1378,9 @@ interface Managed${typeName} {
         def schema = extract(managedType)
 
         then:
-        assert schema instanceof ManagedImplStructSchema
+        assert schema instanceof NewStructSchema
         schema.properties*.name == ["items"]
 
-        schema.getProperty("items").stateManagementType == MANAGED
         schema.getProperty("items").isWritable() == true
 
         where:
@@ -1478,10 +1422,9 @@ interface Managed${typeName} {
         def schema = extract(managedType)
 
         then:
-        assert schema instanceof UnmanagedImplStructSchema
+        assert schema instanceof NewStructSchema
         schema.properties*.name == ["items"]
 
-        schema.getProperty("items").stateManagementType == UNMANAGED
         schema.getProperty("items").isWritable() == false
 
         where:
@@ -1523,7 +1466,7 @@ interface Managed${typeName} {
 
     def "accept non-property methods from unmanaged supertype overridden in managed type"() {
         expect:
-        extract(ManagedTypeWithOverriddenMethodExtendingUnmanagedTypeWithMethod) instanceof ManagedImplStructSchema
+        extract(ManagedTypeWithOverriddenMethodExtendingUnmanagedTypeWithMethod) instanceof NewStructSchema
     }
 
     @Managed
@@ -1533,7 +1476,7 @@ interface Managed${typeName} {
 
     def "accept non-property methods from unmanaged supertype with covariance overridden in managed type"() {
         expect:
-        extract(ManagedTypeWithCovarianceOverriddenMethodExtendingUnamangedTypeWithMethod) instanceof ManagedImplStructSchema
+        extract(ManagedTypeWithCovarianceOverriddenMethodExtendingUnamangedTypeWithMethod) instanceof NewStructSchema
     }
 
     interface UnmanagedSuperTypeWithOverloadedMethod {
@@ -1549,7 +1492,7 @@ interface Managed${typeName} {
 
     def "accept non-property overloaded methods from unmanaged supertype overridden in managed type"() {
         expect:
-        extract(ManagedTypeExtendingUnmanagedTypeWithOverloadedMethod) instanceof ManagedImplStructSchema
+        extract(ManagedTypeExtendingUnmanagedTypeWithOverloadedMethod) instanceof NewStructSchema
     }
 
     @Managed

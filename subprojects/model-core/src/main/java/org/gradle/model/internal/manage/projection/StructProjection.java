@@ -49,7 +49,7 @@ public class StructProjection<M> extends TypeCompatibilityModelProjectionSupport
                             ManagedStructBindingStore.ManagedStructBinding<?> bindings,
                             NewManagedProxyFactory proxyFactory,
                             TypeConverter typeConverter) {
-        super(schema.getType(), true, true);
+        super(schema.getType());
         this.schema = schema;
         this.bindings = bindings;
         this.proxyFactory = proxyFactory;

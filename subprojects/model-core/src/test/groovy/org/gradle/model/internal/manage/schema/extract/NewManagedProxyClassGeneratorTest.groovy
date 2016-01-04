@@ -15,32 +15,33 @@
  */
 
 package org.gradle.model.internal.manage.schema.extract
+
 import com.google.common.base.Optional
 import groovy.transform.NotYetImplemented
 import org.gradle.api.internal.ClosureBackedAction
 import org.gradle.api.internal.file.FileResolver
 import org.gradle.internal.typeconversion.DefaultTypeConverter
+import org.gradle.internal.typeconversion.TypeConverter
 import org.gradle.model.Managed
 import org.gradle.model.internal.core.MutableModelNode
 import org.gradle.model.internal.core.UnmanagedStruct
+import org.gradle.model.internal.fixture.ProjectRegistrySpec
 import org.gradle.model.internal.manage.instance.GeneratedViewState
 import org.gradle.model.internal.manage.instance.ManagedInstance
-import org.gradle.model.internal.manage.instance.ManagedStructBindingStore
 import org.gradle.model.internal.manage.instance.ModelElementState
 import org.gradle.model.internal.manage.schema.NewStructSchema
 import org.gradle.model.internal.type.ModelType
 import org.gradle.util.Matchers
-import spock.lang.Specification
 import spock.lang.Unroll
 
-class NewManagedProxyClassGeneratorTest extends Specification {
+class NewManagedProxyClassGeneratorTest extends ProjectRegistrySpec {
     static def generator = new NewManagedProxyClassGenerator()
     static Map<List<?>, Class<?>> generated = [:]
-    def typeConverter = new DefaultTypeConverter(Stub(FileResolver))
 
-    def aspectExtractor = new ModelSchemaAspectExtractor()
-    def schemaStore = new DefaultModelSchemaStore(DefaultModelSchemaExtractor.withDefaultStrategies([new NewStructSchemaExtractionStrategy(aspectExtractor)], aspectExtractor))
-    def bindingStore = new ManagedStructBindingStore()
+    @Override
+    protected TypeConverter createTypeConverter() {
+        return new DefaultTypeConverter(Stub(FileResolver))
+    }
 
     def "generates a node backed view class for an interface"() {
         expect:
@@ -409,7 +410,6 @@ class NewManagedProxyClassGeneratorTest extends Specification {
     }
 
     // This fails now because we put NewStructSchemaExtractionStrategy at the top of the extractor strategy order
-    @NotYetImplemented
     def "mixes in set method for managed property with scalar type"() {
         def state = Mock(ModelElementState)
 
@@ -435,7 +435,6 @@ class NewManagedProxyClassGeneratorTest extends Specification {
     }
 
     // This fails now because we put NewStructSchemaExtractionStrategy at the top of the extractor strategy order
-    @NotYetImplemented
     def "mixes in set method for delegated property with scalar type"() {
         def state = Mock(ModelElementState)
         def delegate = Mock(UnmanagedImplType)

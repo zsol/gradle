@@ -20,8 +20,8 @@ import org.gradle.model.internal.core.*
 import org.gradle.model.internal.core.rule.describe.SimpleModelRuleDescriptor
 import org.gradle.model.internal.fixture.ModelRegistryHelper
 import org.gradle.model.internal.fixture.ProjectRegistrySpec
-import org.gradle.model.internal.manage.projection.ManagedModelProjection
-import org.gradle.model.internal.manage.schema.StructSchema
+import org.gradle.model.internal.manage.projection.StructProjection
+import org.gradle.model.internal.manage.schema.NewStructSchema
 import org.gradle.model.internal.type.ModelType
 
 public class BaseInstanceFixtureSupport {
@@ -36,17 +36,18 @@ public class BaseInstanceFixtureSupport {
         def modelRegistry = new ModelRegistryHelper()
         modelRegistry.registerInstance("nodeInitializerRegistry", ProjectRegistrySpec.NODE_INITIALIZER_REGISTRY)
 
-        def publicTypeSchema = (StructSchema<T>) ProjectRegistrySpec.SCHEMA_STORE.getSchema(publicType)
-        def internalViewSchema = (StructSchema<? extends T>) ProjectRegistrySpec.SCHEMA_STORE.getSchema(internalView)
-        def delegateSchema = (StructSchema<? extends T>) ProjectRegistrySpec.SCHEMA_STORE.getSchema(implType)
+        def publicTypeSchema = (NewStructSchema<T>) ProjectRegistrySpec.SCHEMA_STORE.getSchema(publicType)
+        def internalViewSchema = (NewStructSchema<? extends T>) ProjectRegistrySpec.SCHEMA_STORE.getSchema(internalView)
+        def delegateSchema = (NewStructSchema<? extends T>) ProjectRegistrySpec.SCHEMA_STORE.getSchema(implType)
+        def bindings = ProjectRegistrySpec.BINDING_STORE.getBinding(publicTypeSchema, [internalViewSchema], delegateSchema)
 
         def registration = ModelRegistrations.of(ModelPath.path(name))
             .action(ModelActionRole.Create) { MutableModelNode node ->
                 def privateData = createUnmanagedInstance(node)
                 node.setPrivateData(implType, privateData)
             }
-            .withProjection(new ManagedModelProjection<T>(publicTypeSchema, delegateSchema, ProjectRegistrySpec.MANAGED_PROXY_FACTORY, null))
-            .withProjection(new ManagedModelProjection<T>(internalViewSchema, delegateSchema, ProjectRegistrySpec.MANAGED_PROXY_FACTORY, null))
+            .withProjection(new StructProjection<T>(publicTypeSchema, bindings, ProjectRegistrySpec.MANAGED_PROXY_FACTORY, null))
+            .withProjection(new StructProjection<T>(internalViewSchema, bindings, ProjectRegistrySpec.MANAGED_PROXY_FACTORY, null))
             .descriptor(new SimpleModelRuleDescriptor("<create $name>"))
         modelRegistry.register(registration.build())
 

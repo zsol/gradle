@@ -37,7 +37,8 @@ import org.gradle.model.internal.core.*;
 import org.gradle.model.internal.core.rule.describe.ModelRuleDescriptor;
 import org.gradle.model.internal.manage.instance.GeneratedViewState;
 import org.gradle.model.internal.manage.instance.ManagedInstance;
-import org.gradle.model.internal.manage.instance.ManagedProxyFactory;
+import org.gradle.model.internal.manage.instance.ManagedStructBindingStore;
+import org.gradle.model.internal.manage.instance.NewManagedProxyFactory;
 import org.gradle.model.internal.manage.schema.*;
 import org.gradle.model.internal.manage.schema.extract.ModelSchemaUtils;
 import org.gradle.model.internal.method.WeaklyTypeReferencingMethod;
@@ -60,13 +61,15 @@ public class ModelRuleExtractor {
             });
 
     private final Iterable<MethodModelRuleExtractor> handlers;
-    private final ManagedProxyFactory proxyFactory;
+    private final NewManagedProxyFactory proxyFactory;
     private final ModelSchemaStore schemaStore;
+    private final ManagedStructBindingStore bindingStore;
 
-    public ModelRuleExtractor(Iterable<MethodModelRuleExtractor> handlers, ManagedProxyFactory proxyFactory, ModelSchemaStore schemaStore) {
+    public ModelRuleExtractor(Iterable<MethodModelRuleExtractor> handlers, NewManagedProxyFactory proxyFactory, ModelSchemaStore schemaStore, ManagedStructBindingStore bindingStore) {
         this.handlers = handlers;
         this.proxyFactory = proxyFactory;
         this.schemaStore = schemaStore;
+        this.bindingStore = bindingStore;
     }
 
     private String describeHandlers() {
@@ -99,7 +102,7 @@ public class ModelRuleExtractor {
 
         // TODO - exceptions thrown here should point to some extensive documentation on the concept of class rule sources
 
-        StructSchema<T> schema = getSchema(source, context);
+        NewStructSchema<T> schema = getSchema(source, context);
         if (schema == null) {
             throw new InvalidModelRuleDeclarationException(context.problems.format());
         }
@@ -108,19 +111,16 @@ public class ModelRuleExtractor {
         Set<Method> methods = new TreeSet<Method>(Ordering.usingToString());
         methods.addAll(Arrays.asList(source.getDeclaredMethods()));
 
-        ImmutableList.Builder<ModelProperty<?>> implicitInputs = ImmutableList.builder();
-        ModelProperty<?> target = null;
-        for (ModelProperty<?> property : schema.getProperties()) {
-            if (property.getAnnotation(RuleTarget.class) != null) {
+        ImmutableList.Builder<NewModelProperty<?>> implicitInputs = ImmutableList.builder();
+        NewModelProperty<?> target = null;
+        for (NewModelProperty<?> property : schema.getProperties()) {
+            if (property.isAnnotationPresent(RuleTarget.class)) {
                 target = property;
-            } else if (property.getAnnotation(RuleInput.class) != null && !(property.getSchema() instanceof ScalarValueSchema)) {
+            } else if (property.isAnnotationPresent(RuleInput.class) && !(property.getSchema() instanceof ScalarValueSchema)) {
                 implicitInputs.add(property);
             }
-            for (WeaklyTypeReferencingMethod<?, ?> method : property.getGetters()) {
+            for (WeaklyTypeReferencingMethod<?, ?> method : property.getAccessorMethods()) {
                 methods.remove(method.getMethod());
-            }
-            if (property.getSetter() != null) {
-                methods.remove(property.getSetter().getMethod());
             }
         }
 
@@ -137,25 +137,27 @@ public class ModelRuleExtractor {
             throw new InvalidModelRuleDeclarationException(context.problems.format());
         }
 
+        ManagedStructBindingStore.ManagedStructBinding<T> binding = bindingStore.getBinding(schema);
+
         if (schema.getProperties().isEmpty()) {
-            return new StatelessRuleSource(rules.build(), Modifier.isAbstract(source.getModifiers()) ? new AbstractRuleSourceFactory<T>(schema, proxyFactory) : new ConcreteRuleSourceFactory<T>(type));
+            return new StatelessRuleSource(rules.build(), Modifier.isAbstract(source.getModifiers()) ? new AbstractRuleSourceFactory<T>(schema, binding, proxyFactory) : new ConcreteRuleSourceFactory<T>(type));
         } else {
-            return new ParameterizedRuleSource(rules.build(), target, implicitInputs.build(), schema, proxyFactory);
+            return new ParameterizedRuleSource(rules.build(), target, implicitInputs.build(), schema, binding, proxyFactory);
         }
     }
 
-    private <T> StructSchema<T> getSchema(Class<T> source, DefaultMethodModelRuleExtractionContext context) {
+    private <T> NewStructSchema<T> getSchema(Class<T> source, DefaultMethodModelRuleExtractionContext context) {
         if (!RuleSource.class.isAssignableFrom(source) || !source.getSuperclass().equals(RuleSource.class)) {
             context.add("Rule source classes must directly extend " + RuleSource.class.getName());
         }
 
         ModelSchema<T> schema = schemaStore.getSchema(source);
-        if (!(schema instanceof StructSchema)) {
+        if (!(schema instanceof NewStructSchema)) {
             return null;
         }
 
         validateClass(source, context);
-        return (StructSchema<T>) schema;
+        return (NewStructSchema<T>) schema;
     }
 
     @Nullable
@@ -278,11 +280,13 @@ public class ModelRuleExtractor {
     }
 
     private static class AbstractRuleSourceFactory<T> implements Factory<T>, GeneratedViewState {
-        private final StructSchema<T> schema;
-        private final ManagedProxyFactory proxyFactory;
+        private final NewStructSchema<T> schema;
+        private final NewManagedProxyFactory proxyFactory;
+        private final ManagedStructBindingStore.ManagedStructBinding<?> binding;
 
-        public AbstractRuleSourceFactory(StructSchema<T> schema, ManagedProxyFactory proxyFactory) {
+        public AbstractRuleSourceFactory(NewStructSchema<T> schema, ManagedStructBindingStore.ManagedStructBinding<?> binding, NewManagedProxyFactory proxyFactory) {
             this.schema = schema;
+            this.binding = binding;
             this.proxyFactory = proxyFactory;
         }
 
@@ -303,7 +307,7 @@ public class ModelRuleExtractor {
 
         @Override
         public T create() {
-            return proxyFactory.createProxy(this, schema);
+            return proxyFactory.createProxy(this, schema, binding);
         }
     }
 
@@ -327,23 +331,25 @@ public class ModelRuleExtractor {
     private static class ParameterizedRuleSource implements CachedRuleSource {
         private final List<ExtractedRuleDetails> rules;
         @Nullable
-        private final ModelProperty<?> target;
-        private final List<ModelProperty<?>> implicitInputs;
-        private final StructSchema<?> schema;
-        private final ManagedProxyFactory proxyFactory;
+        private final NewModelProperty<?> target;
+        private final List<NewModelProperty<?>> implicitInputs;
+        private final NewStructSchema<?> schema;
+        private final ManagedStructBindingStore.ManagedStructBinding<?> binding;
+        private final NewManagedProxyFactory proxyFactory;
 
-        public <T> ParameterizedRuleSource(List<ExtractedRuleDetails> rules, @Nullable ModelProperty<?> target, List<ModelProperty<?>> implicitInputs, StructSchema<T> schema, ManagedProxyFactory proxyFactory) {
+        public <T> ParameterizedRuleSource(List<ExtractedRuleDetails> rules, @Nullable NewModelProperty<?> target, List<NewModelProperty<?>> implicitInputs, NewStructSchema<T> schema, ManagedStructBindingStore.ManagedStructBinding<?> binding, NewManagedProxyFactory proxyFactory) {
             this.rules = rules;
             this.target = target;
             this.implicitInputs = implicitInputs;
             this.schema = schema;
+            this.binding = binding;
             this.proxyFactory = proxyFactory;
         }
 
         @Override
         public <T> ExtractedRuleSource<T> newInstance(Class<T> source) {
-            StructSchema<T> schema = Cast.uncheckedCast(this.schema);
-            return new ParameterizedExtractedRuleSource<T>(rules, target, implicitInputs, schema, proxyFactory);
+            NewStructSchema<T> schema = Cast.uncheckedCast(this.schema);
+            return new ParameterizedExtractedRuleSource<T>(rules, target, implicitInputs, schema, binding, proxyFactory);
         }
     }
 
@@ -483,17 +489,19 @@ public class ModelRuleExtractor {
 
     private static class ParameterizedExtractedRuleSource<T> extends DefaultExtractedRuleSource<T> implements GeneratedViewState, Factory<T> {
         @Nullable
-        private final ModelProperty<?> targetProperty;
-        private final List<ModelProperty<?>> implicitInputs;
-        private final StructSchema<T> schema;
-        private final ManagedProxyFactory proxyFactory;
+        private final NewModelProperty<?> targetProperty;
+        private final List<NewModelProperty<?>> implicitInputs;
+        private final NewStructSchema<T> schema;
+        private final ManagedStructBindingStore.ManagedStructBinding<?> binding;
+        private final NewManagedProxyFactory proxyFactory;
         private final Map<String, Object> values = new HashMap<String, Object>();
 
-        public ParameterizedExtractedRuleSource(List<ExtractedRuleDetails> rules, @Nullable ModelProperty<?> targetProperty, List<ModelProperty<?>> implicitInputs, StructSchema<T> schema, ManagedProxyFactory proxyFactory) {
+        public ParameterizedExtractedRuleSource(List<ExtractedRuleDetails> rules, @Nullable NewModelProperty<?> targetProperty, List<NewModelProperty<?>> implicitInputs, NewStructSchema<T> schema, ManagedStructBindingStore.ManagedStructBinding<?> binding, NewManagedProxyFactory proxyFactory) {
             super(rules);
             this.targetProperty = targetProperty;
             this.implicitInputs = implicitInputs;
             this.schema = schema;
+            this.binding = binding;
             this.proxyFactory = proxyFactory;
         }
 
@@ -504,7 +512,7 @@ public class ModelRuleExtractor {
 
         @Override
         public T create() {
-            return proxyFactory.createProxy(this, schema);
+            return proxyFactory.createProxy(this, schema, binding);
         }
 
         @Override
@@ -534,7 +542,7 @@ public class ModelRuleExtractor {
         protected List<ModelReference<?>> withImplicitInputs(List<? extends ModelReference<?>> inputs) {
             List<ModelReference<?>> allInputs = new ArrayList<ModelReference<?>>(inputs.size() + implicitInputs.size());
             allInputs.addAll(inputs);
-            for (ModelProperty<?> property : implicitInputs) {
+            for (NewModelProperty<?> property : implicitInputs) {
                 ManagedInstance value = (ManagedInstance) values.get(property.getName());
                 allInputs.add(ModelReference.of(value.getBackingNode().getPath()));
             }

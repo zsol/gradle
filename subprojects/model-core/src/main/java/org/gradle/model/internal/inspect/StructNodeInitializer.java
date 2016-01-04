@@ -45,8 +45,8 @@ public class StructNodeInitializer<T> implements NodeInitializer {
     }
 
     @Override
-    public Multimap<ModelActionRole, ModelAction<?>> getActions(ModelReference<?> subject, ModelRuleDescriptor descriptor) {
-        return ImmutableSetMultimap.<ModelActionRole, ModelAction<?>>builder()
+    public Multimap<ModelActionRole, ModelAction> getActions(ModelReference<?> subject, ModelRuleDescriptor descriptor) {
+        return ImmutableSetMultimap.<ModelActionRole, ModelAction>builder()
             .put(ModelActionRole.Discover, DirectNodeInputUsingModelAction.of(subject, descriptor,
                 Arrays.<ModelReference<?>>asList(
                     ModelReference.of(NewManagedProxyFactory.class),
@@ -148,17 +148,7 @@ public class StructNodeInitializer<T> implements NodeInitializer {
                     .build();
                 modelNode.addLink(registration);
             } else {
-                // TODO:LPTR Remove projection for reference node
-                // This shouldn't be needed, but if there's no actual value referenced, model report can only
-                // show the type of the node if we do this for now. It should use the schema instead to find
-                // the type of the property node instead.
-                ModelProjection projection = new EmptyReferenceProjection<P>(propertySchema.getType());
-                ModelRegistration registration = ModelRegistrations.of(childPath)
-                    .withProjection(projection)
-                    .descriptor(descriptor)
-                    .hidden(hidden)
-                    .build();
-                modelNode.addReference(registration);
+                modelNode.addReference(property.getName(), propertySchema.getType(), descriptor);
             }
         }
     }

@@ -42,7 +42,7 @@ class ManagedModelInitializerTest extends ProjectRegistrySpec {
     @Override
     protected NodeInitializerRegistry createNodeInitializerRegistry() {
         // Not shared across tests as test may add constructible types only applying to that particular test
-        return new DefaultNodeInitializerRegistry(SCHEMA_STORE)
+        return new DefaultNodeInitializerRegistry(SCHEMA_STORE, BINDING_STORE)
     }
 
     def "should fail with a contextual exception for managed collections properties"() {

@@ -18,29 +18,29 @@ package org.gradle.model.internal.manage.schema.extract;
 
 import com.google.common.collect.ImmutableSet;
 import org.gradle.internal.Cast;
-import org.gradle.model.Managed;
 import org.gradle.model.internal.core.NodeInitializer;
-import org.gradle.model.internal.inspect.ManagedModelInitializer;
-import org.gradle.model.internal.manage.schema.ManagedImplStructSchema;
+import org.gradle.model.internal.inspect.StructNodeInitializer;
+import org.gradle.model.internal.manage.instance.ManagedStructBindingStore;
 import org.gradle.model.internal.manage.schema.ModelSchema;
+import org.gradle.model.internal.manage.schema.NewStructSchema;
 import org.gradle.model.internal.type.ModelType;
 
-public class ManagedImplStructNodeInitializerExtractionStrategy implements NodeInitializerExtractionStrategy {
+public class StructNodeInitializerExtractionStrategy implements NodeInitializerExtractionStrategy {
 
-    protected boolean isTarget(ModelType<?> type) {
-        return type.isAnnotationPresent(Managed.class);
+    private final ManagedStructBindingStore bindingStore;
+
+    public StructNodeInitializerExtractionStrategy(ManagedStructBindingStore bindingStore) {
+        this.bindingStore = bindingStore;
     }
 
     @Override
     public <T> NodeInitializer extractNodeInitializer(ModelSchema<T> schema) {
-        if (!(schema instanceof ManagedImplStructSchema)) {
+        if (!(schema instanceof NewStructSchema)) {
             return null;
         }
-        if (!isTarget(schema.getType())) {
-            return null;
-        }
-        ManagedImplStructSchema<T> managedSchema = Cast.<ManagedImplStructSchema<T>>uncheckedCast(schema);
-        return new ManagedModelInitializer<T>(managedSchema);
+        NewStructSchema<T> structSchema = Cast.uncheckedCast(schema);
+        ManagedStructBindingStore.ManagedStructBinding<T> bindings = bindingStore.getBinding(structSchema);
+        return new StructNodeInitializer<T>(bindings);
     }
 
     @Override
