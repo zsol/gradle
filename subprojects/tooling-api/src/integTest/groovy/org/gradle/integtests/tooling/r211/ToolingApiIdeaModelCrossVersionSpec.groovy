@@ -264,6 +264,30 @@ class ToolingApiIdeaModelCrossVersionSpec extends ToolingApiSpecification {
         ideaProject.modules.find { it.name == 'child3' }.javaSourceSettings.targetBytecodeLevelInherited == true
     }
 
+    def "Project with a single Software Model component can be imported into the IDE"() {
+        given:
+        buildFile << """
+            plugins {
+                id 'jvm-component'
+                id 'java-lang'
+            }
+            model {
+                components {
+                    main(JvmLibrarySpec)
+                }
+            }
+        """.stripIndent().trim()
+
+        when:
+        def ideaProject = loadIdeaProjectModel()
+        def rootModule = ideaProject.modules.find { it.name == 'root' }
+
+        then:
+        rootModule.contentRoots[0].rootDirectory == projectDir
+        rootModule.javaSourceSettings == null
+        rootModule.dependencies.isEmpty()
+    }
+
     private IdeaProject loadIdeaProjectModel() {
         withConnection { connection -> connection.getModel(IdeaProject) }
     }
