@@ -35,11 +35,6 @@ public interface InstanceFactory<T> {
      */
     <S extends T> ImplementationInfo<T> getImplementationInfo(ModelType<S> publicType);
 
-    /**
-     * Return information about the implementation of a managed type with an unmanaged super-type.
-     */
-    <S extends T> ImplementationInfo<T> getManagedSubtypeImplementationInfo(ModelType<S> publicType);
-
     void validateRegistrations();
 
     interface ImplementationFactory<T> {

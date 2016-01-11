@@ -22,7 +22,6 @@ import com.google.common.collect.*;
 import groovy.lang.GroovyObject;
 import org.gradle.api.Nullable;
 import org.gradle.internal.Cast;
-import org.gradle.model.Managed;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -164,20 +163,5 @@ public class ModelSchemaUtils {
             return method;
         }
         throw new IllegalArgumentException("Cannot find most-specific declaration of method. Declarations checked: " + declaringMethods);
-    }
-
-    /**
-     * Returns whether the most specific of the given methods has been declared in a <code>@</code>{@link Managed} type or not.
-     */
-    public static boolean isMethodDeclaredInManagedType(Iterable<Method> declarations) {
-        Method mostSpecificDeclaration = findMostSpecificMethod(declarations);
-        return isMethodDeclaredInManagedType(mostSpecificDeclaration);
-    }
-
-    /**
-     * Returns whether the method has been declared in a <code>@</code>{@link Managed} type or not.
-     */
-    public static boolean isMethodDeclaredInManagedType(Method method) {
-        return method.getDeclaringClass().isAnnotationPresent(Managed.class);
     }
 }

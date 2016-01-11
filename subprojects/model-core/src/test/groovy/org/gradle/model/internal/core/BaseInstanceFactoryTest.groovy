@@ -198,7 +198,7 @@ class BaseInstanceFactoryTest extends Specification {
 
     def "fails when asking for implementation info for a non-managed type"() {
         when:
-        instanceFactory.getManagedSubtypeImplementationInfo(ModelType.of(ThingSpec))
+        instanceFactory.getImplementationInfo(ModelType.of(ThingSpec))
         then:
         def ex = thrown IllegalArgumentException
         ex.message == "Type '$ThingSpec.name' is not managed"

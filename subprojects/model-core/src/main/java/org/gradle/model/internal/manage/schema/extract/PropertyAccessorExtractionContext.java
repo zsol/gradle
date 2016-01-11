@@ -20,11 +20,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.gradle.internal.Cast;
-import org.gradle.model.internal.asm.AsmClassGeneratorUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,9 +33,6 @@ public class PropertyAccessorExtractionContext {
     private final PropertyAccessorType accessorType;
     private final Collection<Method> declaringMethods;
     private final Method mostSpecificDeclaration;
-    private final String mostSpecificSignature;
-    private final boolean declaredInManagedType;
-    private final boolean declaredAsAbstract;
     private final Map<Class<? extends Annotation>, Annotation> annotations;
 
     public PropertyAccessorExtractionContext(PropertyAccessorType accessorType, Iterable<Method> declaringMethods) {
@@ -45,9 +40,6 @@ public class PropertyAccessorExtractionContext {
         this.accessorType = accessorType;
         this.declaringMethods = ImmutableList.copyOf(declaringMethods);
         this.mostSpecificDeclaration = mostSpecificDeclaration;
-        this.mostSpecificSignature = AsmClassGeneratorUtils.signature(mostSpecificDeclaration);
-        this.declaredInManagedType = ModelSchemaUtils.isMethodDeclaredInManagedType(declaringMethods);
-        this.declaredAsAbstract = Modifier.isAbstract(this.mostSpecificDeclaration.getModifiers());
         this.annotations = collectAnnotations(declaringMethods);
     }
 
@@ -74,18 +66,6 @@ public class PropertyAccessorExtractionContext {
 
     public Method getMostSpecificDeclaration() {
         return mostSpecificDeclaration;
-    }
-
-    public String getMostSpecificSignature() {
-        return mostSpecificSignature;
-    }
-
-    public boolean isDeclaredInManagedType() {
-        return declaredInManagedType;
-    }
-
-    public boolean isDeclaredAsAbstract() {
-        return declaredAsAbstract;
     }
 
     public boolean isAnnotationPresent(Class<? extends Annotation> annotationType) {

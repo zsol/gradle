@@ -121,7 +121,9 @@ public class StructNodeInitializer<T> implements NodeInitializer {
         validateProperty(propertySchema, property, nodeInitializerRegistry);
 
         ModelPath childPath = modelNode.getPath().child(property.getName());
-        if (propertySchema instanceof ManagedImplSchema) {
+        if (!(property.isDeclaredAsHavingUnmanagedType())
+            && !(propertySchema instanceof ScalarValueSchema)
+        ) {
             if (!property.isWritable()) {
                 ModelRegistrations.Builder builder = managedRegistrationBuilder(childPath, property, nodeInitializerRegistry, publicType);
                 addLink(modelNode, builder, property.isInternal());

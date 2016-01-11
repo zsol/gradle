@@ -15,12 +15,8 @@
  */
 
 package org.gradle.model.internal.manage.schema.extract
-
 import org.gradle.model.internal.core.UnmanagedStruct
-import org.gradle.model.internal.manage.schema.CompositeSchema
-import org.gradle.model.internal.manage.schema.ManagedImplSchema
 import org.gradle.model.internal.manage.schema.StructSchema
-import org.gradle.model.internal.manage.schema.UnmanagedImplStructSchema
 import org.gradle.model.internal.type.ModelType
 import org.gradle.model.internal.type.ModelTypes
 import spock.lang.Specification
@@ -31,9 +27,6 @@ class UnmanagedImplStructStrategyTest extends Specification {
     def "assembles schema for unmanaged type"() {
         expect:
         def schema = store.getSchema(ModelType.of(SomeType))
-        schema instanceof UnmanagedImplStructSchema
-        !(schema instanceof ManagedImplSchema)
-        !(schema instanceof CompositeSchema)
         schema instanceof StructSchema
         !schema.annotated
         schema.propertyNames == ['readOnlyString', 'strings'] as SortedSet
@@ -45,9 +38,6 @@ class UnmanagedImplStructStrategyTest extends Specification {
     def "assembles schema for unmanaged type marked with @UnmanagedStruct"() {
         expect:
         def schema = store.getSchema(ModelType.of(SomeStruct))
-        schema instanceof UnmanagedImplStructSchema
-        !(schema instanceof ManagedImplSchema)
-        !(schema instanceof CompositeSchema)
         schema instanceof StructSchema
         schema.annotated
         schema.propertyNames == ['readOnlyString'] as SortedSet
@@ -56,7 +46,7 @@ class UnmanagedImplStructStrategyTest extends Specification {
     def "assembles schema for unmanaged type that references itself"() {
         expect:
         def schema = store.getSchema(ModelType.of(Person))
-        schema instanceof UnmanagedImplStructSchema
+        schema instanceof StructSchema
         schema.propertyNames == ['parent'] as SortedSet
         schema.properties*.name == ['parent']
         schema.getProperty('parent').schema == schema

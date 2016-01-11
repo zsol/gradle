@@ -56,7 +56,7 @@ public class DefaultNodeInitializerRegistry implements NodeInitializerRegistry {
             new SpecializedMapNodeInitializerExtractionStrategy(),
             new ModelMapNodeInitializerExtractionStrategy(),
             new ScalarCollectionNodeInitializerExtractionStrategy(),
-            new ManagedImplStructNodeInitializerExtractionStrategy(structBindingsStore)
+            new StructNodeInitializerExtractionStrategy(structBindingsStore)
         );
         additionalStrategies = Lists.newArrayList();
     }

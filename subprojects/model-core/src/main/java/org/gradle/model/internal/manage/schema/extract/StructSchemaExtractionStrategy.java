@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.gradle.model.internal.manage.schema.extract;
 
-import org.gradle.model.Managed;
 import org.gradle.model.internal.manage.schema.ManagedImplStructSchema;
 import org.gradle.model.internal.manage.schema.ModelProperty;
 import org.gradle.model.internal.manage.schema.ModelSchema;
@@ -25,14 +24,16 @@ import org.gradle.model.internal.type.ModelType;
 
 import java.util.Set;
 
-public class ManagedImplStructStrategy extends StructSchemaExtractionStrategySupport {
+public class StructSchemaExtractionStrategy extends StructSchemaExtractionStrategySupport {
 
-    protected ManagedImplStructStrategy(ModelSchemaAspectExtractor aspectExtractor) {
+    public StructSchemaExtractionStrategy(ModelSchemaAspectExtractor aspectExtractor) {
         super(aspectExtractor);
     }
 
+    @Override
     protected boolean isTarget(ModelType<?> type) {
-        return type.isAnnotationPresent(Managed.class);
+        // Everything is an unmanaged struct that hasn't been handled before
+        return true;
     }
 
     @Override

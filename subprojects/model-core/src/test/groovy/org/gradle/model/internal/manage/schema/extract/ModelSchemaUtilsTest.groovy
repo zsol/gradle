@@ -76,20 +76,6 @@ class ModelSchemaUtilsTest extends Specification {
         abstract void setValue(String value)
     }
 
-    def "detects managed property"() {
-        expect:
-        ModelSchemaUtils.isMethodDeclaredInManagedType(ModelSchemaUtils.getCandidateMethods(ManagedType).methodsNamed("getValue").values().flatten()) == true
-    }
-
-    class UnmanagedType  {
-        String value
-    }
-
-    def "detects unmanaged property"() {
-        expect:
-        ModelSchemaUtils.isMethodDeclaredInManagedType(ModelSchemaUtils.getCandidateMethods(UnmanagedType).methodsNamed("getValue").values().flatten()) == false
-    }
-
     interface TypeWithOverloadedMethods {
         String anything()
         String someOverloadedMethod(Object param)

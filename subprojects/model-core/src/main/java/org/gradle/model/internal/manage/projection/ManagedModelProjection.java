@@ -27,6 +27,7 @@ import org.gradle.model.internal.core.ModelView;
 import org.gradle.model.internal.core.MutableModelNode;
 import org.gradle.model.internal.core.TypeCompatibilityModelProjectionSupport;
 import org.gradle.model.internal.core.rule.describe.ModelRuleDescriptor;
+import org.gradle.model.internal.manage.binding.ManagedProperty;
 import org.gradle.model.internal.manage.binding.StructBindings;
 import org.gradle.model.internal.manage.instance.ManagedInstance;
 import org.gradle.model.internal.manage.instance.ManagedProxyFactory;
@@ -174,7 +175,10 @@ public class ManagedModelProjection<M> extends TypeCompatibilityModelProjectionS
                     MutableModelNode propertyNode = modelNode.getLink(name);
                     propertyNode.ensureUsable();
 
-                    if (propertySchema instanceof ManagedImplSchema) {
+                    ManagedProperty<?> managedProperty = bindings.getManagedProperty(property.getName());
+                    if (!managedProperty.isDeclaredAsHavingUnmanagedType()
+                        && !(propertySchema instanceof ScalarValueSchema)
+                    ) {
                         if (value == null) {
                             if (propertySchema instanceof ScalarCollectionSchema) {
                                 ScalarCollectionSchema.clear(propertyNode);

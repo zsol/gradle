@@ -39,7 +39,7 @@ class DefaultModelSchemaExtractorTest extends Specification {
 
     def "unmanaged type"() {
         expect:
-        extract(NotAnnotatedInterface) instanceof UnmanagedImplStructSchema
+        extract(NotAnnotatedInterface) instanceof StructSchema
     }
 
     @Managed
@@ -67,7 +67,7 @@ class DefaultModelSchemaExtractorTest extends Specification {
         def schema = extract(SetterOnlyUnmanaged)
 
         then:
-        assert schema instanceof UnmanagedImplStructSchema
+        assert schema instanceof StructSchema
         schema.getProperty("name") == null
     }
 
@@ -496,7 +496,7 @@ $ModelSet.name<$ModelMap.name>
 
     def "subclasses of non final scalar types are treated as unmanaged"() {
         expect:
-        extract(type) instanceof UnmanagedImplStructSchema
+        extract(type) instanceof StructSchema
 
         where:
         type << [MyBigInteger, MyBigDecimal, MyFile]
@@ -673,7 +673,7 @@ interface Managed${typeName} {
         def schema = extract(SimpleUnmanagedType)
 
         then:
-        assert schema instanceof UnmanagedImplStructSchema
+        assert schema instanceof StructSchema
         schema.getProperty("prop").getPropertyValue(instance) == "12"
         schema.getProperty("calculatedProp").getPropertyValue(instance) == "calc"
     }
@@ -700,7 +700,7 @@ interface Managed${typeName} {
         def schema = extract(SimpleUnmanagedTypeWithAnnotations)
 
         then:
-        assert schema instanceof UnmanagedImplStructSchema
+        assert schema instanceof StructSchema
         schema.properties*.name == ["buildable", "time", "unmanagedCalculatedProp", "unmanagedProp"]
 
         schema.getProperty("unmanagedProp").isWritable() == true
@@ -976,7 +976,7 @@ interface Managed${typeName} {
         def schema = extract(managedType)
 
         then:
-        assert schema instanceof UnmanagedImplStructSchema
+        assert schema instanceof StructSchema
         schema.properties*.name == ["items"]
 
         schema.getProperty("items").isWritable() == false
