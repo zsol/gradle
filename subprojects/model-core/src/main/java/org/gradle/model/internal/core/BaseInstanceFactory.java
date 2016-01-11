@@ -63,7 +63,7 @@ public class BaseInstanceFactory<T> implements InstanceFactory<T> {
         if (!registrations.containsKey(publicType)) {
             throw new IllegalArgumentException(
                 String.format("Cannot create a '%s' because this type is not known to %s. Known types are: %s",
-                    publicType.getDisplayName(), displayName, getConstructibleTypeNames()));
+                    publicType, displayName, getConstructibleTypeNames()));
         }
         final List<ImplementationInfo<T>> implementationInfos = Lists.newArrayListWithCapacity(1);
         ModelSchemaUtils.walkTypeHierarchy(publicType.getConcreteClass(), new RegistrationHierarchyVisitor<S>() {

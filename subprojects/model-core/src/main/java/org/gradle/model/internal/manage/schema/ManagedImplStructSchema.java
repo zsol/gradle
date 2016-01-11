@@ -25,9 +25,10 @@ public class ManagedImplStructSchema<T> extends AbstractStructSchema<T> implemen
         ModelType<T> type,
         Iterable<ModelProperty<?>> properties,
         Iterable<WeaklyTypeReferencingMethod<?, ?>> nonPropertyMethods,
-        Iterable<ModelSchemaAspect> aspects
+        Iterable<ModelSchemaAspect> aspects,
+        boolean annotated
     ) {
-        super(type, properties, nonPropertyMethods, aspects);
+        super(type, properties, nonPropertyMethods, aspects, annotated);
     }
 
     @Override

@@ -46,4 +46,6 @@ public interface StructSchema<T> extends ModelSchema<T> {
     <A extends ModelSchemaAspect> A getAspect(Class<A> aspectType);
 
     Collection<ModelSchemaAspect> getAspects();
+
+    boolean isAnnotated();
 }

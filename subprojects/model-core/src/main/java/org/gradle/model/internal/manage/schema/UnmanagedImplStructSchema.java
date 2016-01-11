@@ -21,8 +21,6 @@ import org.gradle.model.internal.method.WeaklyTypeReferencingMethod;
 import org.gradle.model.internal.type.ModelType;
 
 public class UnmanagedImplStructSchema<T> extends AbstractStructSchema<T> {
-    private final boolean annotated;
-
     public UnmanagedImplStructSchema(
         ModelType<T> type,
         Iterable<ModelProperty<?>> properties,
@@ -30,12 +28,7 @@ public class UnmanagedImplStructSchema<T> extends AbstractStructSchema<T> {
         Iterable<ModelSchemaAspect> aspects,
         boolean annotated
     ) {
-        super(type, properties, nonPropertyMethods, aspects);
-        this.annotated = annotated;
-    }
-
-    public boolean isAnnotated() {
-        return annotated;
+        super(type, properties, nonPropertyMethods, aspects, annotated);
     }
 
     @Override

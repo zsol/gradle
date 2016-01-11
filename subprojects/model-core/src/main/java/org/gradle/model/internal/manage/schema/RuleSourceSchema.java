@@ -30,6 +30,6 @@ public class RuleSourceSchema<T> extends AbstractStructSchema<T> {
         Iterable<WeaklyTypeReferencingMethod<?, ?>> nonPropertyMethods,
         Iterable<ModelSchemaAspect> aspects
     ) {
-        super(type, properties, nonPropertyMethods, aspects);
+        super(type, properties, nonPropertyMethods, aspects, false);
     }
 }

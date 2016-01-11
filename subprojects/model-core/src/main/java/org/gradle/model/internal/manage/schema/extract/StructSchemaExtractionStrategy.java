@@ -16,6 +16,7 @@
 
 package org.gradle.model.internal.manage.schema.extract;
 
+import org.gradle.model.internal.core.UnmanagedStruct;
 import org.gradle.model.internal.manage.schema.ManagedImplStructSchema;
 import org.gradle.model.internal.manage.schema.ModelProperty;
 import org.gradle.model.internal.manage.schema.ModelSchema;
@@ -38,6 +39,7 @@ public class StructSchemaExtractionStrategy extends StructSchemaExtractionStrate
 
     @Override
     protected <R> ModelSchema<R> createSchema(ModelSchemaExtractionContext<R> extractionContext, Iterable<ModelProperty<?>> properties, Set<WeaklyTypeReferencingMethod<?, ?>> nonPropertyMethods, Iterable<ModelSchemaAspect> aspects) {
-        return new ManagedImplStructSchema<R>(extractionContext.getType(), properties, nonPropertyMethods, aspects);
+        boolean annotated = extractionContext.getType().isAnnotationPresent(UnmanagedStruct.class);
+        return new ManagedImplStructSchema<R>(extractionContext.getType(), properties, nonPropertyMethods, aspects, annotated);
     }
 }

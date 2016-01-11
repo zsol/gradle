@@ -276,13 +276,6 @@ class DefaultStructBindingsStoreTest extends Specification {
         void setMyEnum(MyEnum myEnum)
     }
 
-    def "cannot annotate managed type property with unmanaged"() {
-        when: extract HasUnmanagedOnManaged
-        then: def ex = thrown InvalidManagedTypeException
-        ex.message == """Type $HasUnmanagedOnManaged.name is not a valid managed type:
-- Property 'myEnum' is not valid: it is marked as @Unmanaged, but is of @Managed type '${getName(MyEnum)}'; please remove the @Managed annotation"""
-    }
-
     @Managed
     static interface NoSetterForUnmanaged {
         @Unmanaged
@@ -599,7 +592,7 @@ class DefaultStructBindingsStoreTest extends Specification {
         AdditionalConstructorWithArguments(String arg) {}
     }
 
-    static class SuperConstructorWithArguments {
+    static abstract class SuperConstructorWithArguments {
         SuperConstructorWithArguments(String arg) {}
     }
 
@@ -647,10 +640,10 @@ class DefaultStructBindingsStoreTest extends Specification {
         when: extract MultipleProblems
         then: def ex = thrown InvalidManagedTypeException
         ex.message == """Type $MultipleProblems.name is not a valid managed type:
-- Must be defined as an interface or an abstract class.
-- Cannot be a parameterized type.
 - Constructor MultipleProblems(java.lang.String) is not valid: Custom constructors are not supported.
 - Field field2 is not valid: Fields must be static final.
+- Must be defined as an interface or an abstract class.
+- Cannot be a parameterized type.
 - Constructor MultipleProblemsSuper(java.lang.String) is not valid: Custom constructors are not supported.
 - Field MultipleProblemsSuper.field1 is not valid: Fields must be static final.
 - Method MultipleProblemsSuper.getPrivate() is not a valid method: Protected and private methods are not supported."""

@@ -552,8 +552,8 @@ public class ManagedProxyClassGenerator extends AbstractProxyClassGenerator {
             finishVisitingMethod(methodVisitor);
             return;
         }
-        if (!writable && property.getSchema() instanceof UnmanagedImplStructSchema) {
-            UnmanagedImplStructSchema<?> structSchema = (UnmanagedImplStructSchema<?>) property.getSchema();
+        if (!writable && property.getSchema() instanceof StructSchema) {
+            StructSchema<?> structSchema = (StructSchema<?>) property.getSchema();
             if (!structSchema.isAnnotated()) {
                 return;
             }

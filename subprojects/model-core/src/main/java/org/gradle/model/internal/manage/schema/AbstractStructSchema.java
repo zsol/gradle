@@ -34,13 +34,14 @@ public abstract class AbstractStructSchema<T> extends AbstractModelSchema<T> imp
     private final ImmutableSortedMap<String, ModelProperty<?>> properties;
     private final Set<WeaklyTypeReferencingMethod<?, ?>> nonPropertyMethods;
     private final Map<Class<? extends ModelSchemaAspect>, ModelSchemaAspect> aspects;
+    private final boolean annotated;
 
     public AbstractStructSchema(
         ModelType<T> type,
         Iterable<ModelProperty<?>> properties,
         Iterable<WeaklyTypeReferencingMethod<?, ?>> nonPropertyMethods,
-        Iterable<ModelSchemaAspect> aspects
-    ) {
+        Iterable<ModelSchemaAspect> aspects,
+        boolean annotated) {
         super(type);
         ImmutableSortedMap.Builder<String, ModelProperty<?>> builder = ImmutableSortedMap.naturalOrder();
         for (ModelProperty<?> property : properties) {
@@ -54,6 +55,7 @@ public abstract class AbstractStructSchema<T> extends AbstractModelSchema<T> imp
                 return aspect.getClass();
             }
         });
+        this.annotated = annotated;
     }
 
     public SortedSet<String> getPropertyNames() {
@@ -102,5 +104,10 @@ public abstract class AbstractStructSchema<T> extends AbstractModelSchema<T> imp
     @Override
     public Collection<ModelSchemaAspect> getAspects() {
         return aspects.values();
+    }
+
+    @Override
+    public boolean isAnnotated() {
+        return annotated;
     }
 }
